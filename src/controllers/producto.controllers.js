@@ -1,29 +1,37 @@
 import Producto from '../models/m_producto'
 
+let mysql = require('mysql');
+const { promisify } = require('util')
+var config_mysql = require('../config_mysql.js')
+
 // Autor: Anderson Salazar
 // 27/10/22
 /* el codigo aqui es usado para obtenera a los productos habilitados*/
 
 export const getProductos = async (req, res) => {
-    try{
-      const productos = await Producto.find({estado:"habilitado"});
-      if (!productos) {
-        return res.json({
-          status: 404,
-          message: "No se encontró a los productos H",
-        });
-      }     
+     try {
+      let sql = `CALL sp_get_productos()`;
+      const pool = mysql.createPool(config_mysql)
+      const promiseQuery = promisify(pool.query).bind(pool)
+      const promisePoolEnd = promisify(pool.end).bind(pool)
+      const result = await promiseQuery(sql)
+      promisePoolEnd()
+      const productos = Object.values(JSON.parse(JSON.stringify(result[0])));
       return res.json(
-        {status: 200,
-         message: "Se ha obtenido los productos habilitados",
-         data: productos}
-       );
-    } catch (error) {
-      return res.json(
-        {status: 500,
-        message: "Se ha producido un ERROR al obtener los productos",
+        {
+          status: 200,
+          message: "Se ha obtenido los productos habilitadas",
+          data: productos
         }
-        );
+      );
+    } catch (error) {
+      console.log(error)
+      return res.json(
+        {
+          status: 500,
+          message: "Se ha producido un ERROR al obtener los productos habilitados",
+        }
+      );
     }
 }
 /* el codigo aqui es usado para obtenera a los productos inhabilitados*/
@@ -31,51 +39,58 @@ export const getProductos = async (req, res) => {
 // 24/11/22
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const getProductosInhabilitados = async (req, res) => {
-  try{
-    const productos = await Producto.find({estado:"inhabilitado"});
-    if (!productos) {
-      return res.json({
-        status: 404,
-        message: "No se encontró a los productos I",
-      });
-    }     
+  try {
+    let sql = `CALL sp_get_productos_inhabilitados()`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+    promisePoolEnd()
+    const productos = Object.values(JSON.parse(JSON.stringify(result[0])));
     return res.json(
-      {status: 200,
-       message: "Se ha obtenido los productos inhabilitados",
-       data: productos}
-     );
-  } catch (error) {
-    return res.json(
-      {status: 500,
-      message: "Se ha producido un ERROR al obtener las productos inhabilitados",
+      {
+        status: 200,
+        message: "Se ha obtenido los productos inhabilitadas",
+        data: productos
       }
-      );
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al obtener los productos inhabilitados",
+      }
+    );
   }
 }
 // Autor: Anderson Salazar
 // 24/11/22
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const getProductoByStockMinimo= async (req, res) => {
-  try{
-    let productos = await Producto.aggregate([{"$match": {"$expr": {"$gt": ["$stockMinimo", "$stock"]}}},{ $match : { estado : 'habilitado'} }])
-    if (!productos) {
-      return res.json({
-        status: 404,
-        message: "No se encontró los productos SM",
-      });
-    }     
+  try {
+    let sql = `CALL sp_get_producto_by_stock_minimo()`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+    promisePoolEnd()
+    const productos = Object.values(JSON.parse(JSON.stringify(result[0])));
     return res.json(
-      {status: 200,
-       message: "Se ha obtenido las productos por stock minimo",
-       data: productos}
-     );
-  } catch (error) {
-    console.log(error.message)
-    return res.json(
-      {status: 500,
-      message: "Se ha producido un ERROR al obtener los productos por stock minimo",
+      {
+        status: 200,
+        message: "Se ha obtenido los productos con stock minimo alcanzado",
+        data: productos
       }
-      );
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al obtener los productos con stock minimo alcanzado",
+      }
+    );
   }
 }
 /* el codigo aqui es usado para obtener un producto por su codigo*/
@@ -83,32 +98,65 @@ export const getProductoByStockMinimo= async (req, res) => {
 // 24/11/22
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const getProductoByCode = async (req, res) => {
-  try{
-    const {codigo} = req.params;
-    let productos = await Producto.findOne({codigo:codigo});
-    if (!productos) {
-      return res.json({
-        status: 404,
-        message: "No se encontró al producto",
-      });
-    }      
+  try {
+    const { codigo } = req.params;
+
+    let sql = `CALL sp_get_producto_by_code('${codigo}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const producto = Object.values(JSON.parse(JSON.stringify(result[0])));
     return res.json(
-      {status: 200,
-       message: "Se ha obtenido las productos por codigo",
-       data: productos}
-     );
-  } catch (error) {
-    return res.json(
-      {status: 500,
-      message: "Se ha producido un ERROR al obtener los productos por codigo",
+      {
+        status: 200,
+        message: "Se ha obtenido el producto solicitado por codigo",
+        data: producto
       }
-      );
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al obtener el producto by code",
+        error
+      }
+    );
   }
 }
 /* el codigo aqui es usado para obtener un producto por su id*/
 export const getProductoById = async (req, res) => {
-    const product = await Producto.findById(req.params);
-    res.json(product)
+  try {
+    const {_id} = req.params;
+
+    let sql = `CALL sp_get_producto_by_id('${_id}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const producto = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
+      {
+        status: 200,
+        message: "Se ha obtenido la categoria solicitada",
+        data: producto
+      }
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al obtener la categoria by name",
+        error
+      }
+    );
+  }
 }
 
 // Autor: Anderson Salazar
@@ -121,96 +169,100 @@ export const getProductoById = async (req, res) => {
 export const createProducto = async (req, res) => {
     try {
         const {
-            codigo,
-            nombre,
-            stock,
-            stockMinimo,
-            costo,
-            nomCategoria,
-            descripcion,
-            precio,
+          id,
+          nombre,
+          id_categoria,   
+          id_usuario,
+          codigo,
+          unidad_medida,
+          costo,
+          descripcion,
+          stock,
+          stock_min
         } = req.body;
-        const newProducto = new Producto({
-            codigo,
-            nombre,
-            stock,
-            stockMinimo,
-            costo,
-            nomCategoria,
-            descripcion,
-            estado:"habilitado",
-            precio,
-        })
-        const productoSaved = await newProducto.save()
+        let sql = `CALL sp_create_producto('${id}','${nombre}','${id_categoria}','${id_usuario}','${codigo}','${unidad_medida}','${costo}','${descripcion}','${stock}','${stock_min}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
 
-        return res.json({
-            status: 201,
-            productoSaved,
-            message: "Se ha creado el nuevo producto",
-        });
-    } catch (error) {
-        return res.json({
-            status: 500,
-            message: "Se ha generado un error al momento de crear un producto",
-        });
-    }
+    promisePoolEnd()
+    const producto = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
+      {
+        status: 200,
+        message: "Se ha obtenido creado el producto ",
+        data: producto
+      }
+    );
+  } catch (error) {
+    console.log(error)
+
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al crear el producto",
+        error
+      }
+    );
+  }
 
 }
 
-export const updateProductById= async (req, res) => {
-    try {
-            const {
-              codigo,
-              nombre,
-              stock,
-              stockMinimo,
-              costo,
-              nomCategoria,
-              descripcion,
-              precio,
+// export const updateProductById= async (req, res) => {
+//     try {
+//             const {
+//               codigo,
+//               nombre,
+//               stock,
+//               stockMinimo,
+//               costo,
+//               nomCategoria,
+//               descripcion,
+//               precio,
               
-            } = req.body;
+//             } = req.body;
         
-            const { _id } = req.params;
+//             const { _id } = req.params;
         
-            const Producto_upd = await Producto.findOneAndUpdate(
-              { _id },
-              {
-              codigo,
-              nombre,
-              stock,
-              stockMinimo,
-              costo,
-              nomCategoria,
-              descripcion,
-              precio,
-              }
-            );
-            if (!Producto_upd) {
-              return res.json({
-                status: 404,
-                message: "No se encontró al producto que se quiere editar",
-              });
-            }
+//             const Producto_upd = await Producto.findOneAndUpdate(
+//               { _id },
+//               {
+//               codigo,
+//               nombre,
+//               stock,
+//               stockMinimo,
+//               costo,
+//               nomCategoria,
+//               descripcion,
+//               precio,
+//               }
+//             );
+//             if (!Producto_upd) {
+//               return res.json({
+//                 status: 404,
+//                 message: "No se encontró al producto que se quiere editar",
+//               });
+//             }
         
-            const updated_product = await Producto.findOne({ _id });
+//             const updated_product = await Producto.findOne({ _id });
         
-            return res.json({
-              status: 200,
-              message: "Se ha actualizado el producto",
-              data: updated_product,
-            });
-          } catch (error) {
-            console.log(error);
-            return res.json({
-              status: 500,
-              message: "Ha aparecido un ERROR al momento de actualizar a un producto",
+//             return res.json({
+//               status: 200,
+//               message: "Se ha actualizado el producto",
+//               data: updated_product,
+//             });
+//           } catch (error) {
+//             console.log(error);
+//             return res.json({
+//               status: 500,
+//               message: "Ha aparecido un ERROR al momento de actualizar a un producto",
               
-            });
-          }
+//             });
+//           }
          
 
-}
+// }
 
 /* el codigo aqui permite dar de baja a un producto*/
 // Autor: Anderson Salazar
@@ -218,69 +270,67 @@ export const updateProductById= async (req, res) => {
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const updateProductInhabilitar= async (req, res) => {
   try {
-                 
-          const { _id } = req.params;
-           const Product_upd = await Producto.findOneAndUpdate(
-            { _id },
-            {              
-              estado:"inhabilitado"
-            } 
-          );
+    const {_id} = req.params;
 
-          if (!Product_upd) {
-            return res.json({
-              status: 404,
-              message: "No se encontró al producto que se quiere dar de baja",
-            });
-          }      
-          const updated_product = await Producto.findOne({ _id });      
-          return res.json({
-            status: 200,
-            message: "Se ha inhabilitado el producto",
-            data: updated_product,
-          });
-        } catch (error) {
-          console.log(error);
-          return res.json({
-            status: 500,
-            message: "Ha aparecido un ERROR al momento de dar de baja a un producto",            
-          });
-        }
-       
+    let sql = `CALL sp_update_product_inhabilitar('${_id}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const producto = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
+      {
+        status: 200,
+        message: "Se ha dado de baja al producto",
+        data: producto
+      }
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al dar de baja producto",
+        error
+      }
+    );
+  }       
 
 }
 
 /* el codigo aqui permite dar de Alta a un Producto*/
 export const updateProductHabilitar= async (req, res) => {
   try {
-                 
-          const { _id } = req.params;
-           const Product_upd = await Producto.findOneAndUpdate(
-            { _id },
-            {              
-              estado:"habilitado"
-            } 
-          );
+    const {_id} = req.params;
 
-          if (!Product_upd) {
-            return res.json({
-              status: 404,
-              message: "No se encontró al producto que se quiere dar de alta",
-            });
-          }      
-          const updated_product = await Producto.findOne({ _id });      
-          return res.json({
-            status: 200,
-            message: "Se ha Habilitado el producto",
-            data: updated_product,
-          });
-        } catch (error) {
-          console.log(error);
-          return res.json({
-            status: 500,
-            message: "Ha aparecido un ERROR al momento de dar de alta a un producto",            
-          });
-        }
+    let sql = `CALL sp_update_product_habilitar('${_id}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const producto = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
+      {
+        status: 200,
+        message: "Se ha habilitado el producto",
+        data: producto
+      }
+    );
+  } catch (error) {
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al dar de alta al producto",
+        error
+      }
+    );
+  }
+
        
 
 }

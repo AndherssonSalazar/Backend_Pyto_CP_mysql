@@ -7,9 +7,11 @@ router.get('/', productosCtrl.getProductos);
 router.get('/inhabilitados/', productosCtrl.getProductosInhabilitados);
 router.get('/read/:codigo', productosCtrl.getProductoByCode);
 router.get('/stockminimo/', productosCtrl.getProductoByStockMinimo);
-router.post('/',[authJwt.verifyToken,authJwt.isJefeAlmacen], productosCtrl.createProducto);
-router.put('/:_id',[authJwt.verifyToken,authJwt.isJefeAlmacen], productosCtrl.updateProductById);
-router.put("/inhabilitar/:_id", [authJwt.verifyToken,authJwt.isJefeAlmacen], productosCtrl.updateProductInhabilitar);
-router.put("/habilitar/:_id", [authJwt.verifyToken,authJwt.isJefeAlmacen], productosCtrl.updateProductHabilitar);
+router.get('/:_id', productosCtrl.getProductoById);
+
+router.post('/', productosCtrl.createProducto);
+// router.put('/:_id', productosCtrl.updateProductById);
+router.put("/inhabilitar/:_id",  productosCtrl.updateProductInhabilitar);
+router.put("/habilitar/:_id", productosCtrl.updateProductHabilitar);
 
 module.exports= router;
