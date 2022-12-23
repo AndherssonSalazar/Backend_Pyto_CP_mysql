@@ -136,29 +136,6 @@ export const getCategoriaByName = async (req, res) => {
 /* el codigo aqui es usado para el
  CUS registrar a una categorias*/
 export const createCategoria = async (req, res) => {
-  // try {
-  //     const {
-  //       codigo,
-  //       nombre,
-  //       } = req.body;
-  //     const newCategoria = new Categoria({
-  //       codigo,
-  //       nombre,
-  //       estado:"habilitado"
-  //     })
-  //     const categoriaSaved = await newCategoria.save()
-
-  //     return res.json({
-  //         status: 201,
-  //         categoriaSaved,
-  //         message: "Se ha creado la nueva categoria",
-  //     });
-  // } catch (error) {
-  //     return res.json({
-  //         status: 500,
-  //         message: "Se ha generado un error al momento de crear una categoria",
-  //     });
-  // }
   try {
     const {
       id,
@@ -174,7 +151,7 @@ export const createCategoria = async (req, res) => {
     const result = await promiseQuery(sql)
 
     promisePoolEnd()
-    const categoria = Object.values(JSON.parse(JSON.stringify(result)));
+    const categoria = Object.values(JSON.parse(JSON.stringify(result[0])));
     return res.json(
       {
         status: 200,
@@ -184,7 +161,7 @@ export const createCategoria = async (req, res) => {
     );
   } catch (error) {
     console.log(error)
-    
+
     return res.json(
       {
         status: 500,
@@ -199,65 +176,68 @@ export const createCategoria = async (req, res) => {
 /* el codigo aqui es usado para modificar el ESTADO DE LA CATEGORIA
 no se modifica otro campo*/
 /* el codigo aqui permite dar de baja a una categoria*/
+
 export const updateCategoriaInhabilitar = async (req, res) => {
   try {
-    const { _id } = req.params;
-    const Categoria_upd = await Categoria.findOneAndUpdate(
-      { _id },
+    const {_id} = req.params;
+
+    let sql = `CALL sp_update_categoria_inhabilitar('${_id}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const categoria = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
       {
-        estado: "inhabilitado"
-      });
-    if (!Categoria_upd) {
-      return res.json({
-        status: 404,
-        message: "No se encontró la categoría que se quiere dar de baja",
-      });
-    }
-    const updated_categoria = await Categoria.findOne({ _id });
-    return res.json({
-      status: 200,
-      message: "Se ha dado de baja a la categoría",
-      data: updated_categoria,
-    });
+        status: 200,
+        message: "Se ha inhabilitado la categoria",
+        data: categoria
+      }
+    );
   } catch (error) {
-    console.log(error);
-    return res.json({
-      status: 500,
-      message: "Ha aparecido un ERROR al momento de dar de baja a la categoría",
-    });
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al dar de baja a la categoria",
+        error
+      }
+    );
   }
+
 }
 
 /* el codigo aqui permite dar de Alta a una categoria*/
 export const updateCategoriaHabilitar = async (req, res) => {
   try {
+    const {_id} = req.params;
 
-    const { _id } = req.params;
-    const Categoria_upd = await Categoria.findOneAndUpdate(
-      { _id },
+    let sql = `CALL sp_update_categoria_habilitar('${_id}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+
+    promisePoolEnd()
+    const categoria = Object.values(JSON.parse(JSON.stringify(result[0])));
+    return res.json(
       {
-        estado: "habilitado"
+        status: 200,
+        message: "Se ha habilitado la categoria",
+        data: categoria
       }
     );
-
-    if (!Categoria_upd) {
-      return res.json({
-        status: 404,
-        message: "No se encontró a la categoria que se quiere dar de alta",
-      });
-    }
-    const updated_categoria = await Categoria.findOne({ _id });
-    return res.json({
-      status: 200,
-      message: "Se ha Habilitado la categoria",
-      data: updated_categoria,
-    });
   } catch (error) {
-    console.log(error);
-    return res.json({
-      status: 500,
-      message: "Ha aparecido un ERROR al momento de dar de alta a una categoria",
-    });
+    console.log(error)
+    return res.json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al dar de alta a la categoria",
+        error
+      }
+    );
   }
 
 
