@@ -1,7 +1,5 @@
 //Validation
-
 import User from "../models/m_user";
-import { ROLES } from "../models/m_role";
 
 //Jonatan Pacora Vega
 // 17/10/22
@@ -15,6 +13,7 @@ export const checkExistingUser = async (req, res, next) => {
 
     const email = await User.findOne({ email: req.body.email });
     if (email)
+    
       return res.status(400).json({ message: "el email ya existe" });
     
     const dni = await User.findOne({ dni: req.body.dni });
@@ -28,18 +27,18 @@ export const checkExistingUser = async (req, res, next) => {
 };
 
 
-// Para verificacion de la existencia del Rol de usuario
-export const checkExistingRole = (req, res, next) => {
+// // Para verificacion de la existencia del Rol de usuario
+// export const checkExistingRole = (req, res, next) => {
   
 
-  if (!req.body.roles) return res.status(400).json({ message: "No roles" });
+//   if (!req.body.roles) return res.status(400).json({ message: "No roles" });
 
   
-  if (!ROLES.includes(req.body.roles)) {
-      return res.status(400).json({
-        message: `Role ${req.body.roles} does not exist`,
-      });
-  }
+//   if (!ROLES.includes(req.body.roles)) {
+//       return res.status(400).json({
+//         message: `Role ${req.body.roles} does not exist`,
+//       });
+//   }
   
-  next();
-};
+//   next();
+// };
