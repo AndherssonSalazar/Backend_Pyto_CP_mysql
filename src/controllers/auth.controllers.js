@@ -1,72 +1,84 @@
-import  User from '../models/m_user'
 import jwt from 'jsonwebtoken'
 import config  from '../config'
-import Role from '../models/m_role'
+import { hashPassword, comparePassword } from "../core/bcrypt";
+
+let mysql = require('mysql');
+const { promisify } = require('util')
+var config_mysql = require('../config_mysql.js')
 
 
 export const signUp = async (req, res) => {
-        
-    const {username, email,password,roles}=req.body;
+    try {
+        const {
+          id_user,
+          username,
+          email,
+          password,
+          direccion,
+          telefono,
+          dni          
+        } = req.body;
+
+        const newpassword=  await hashPassword(password);
+        const rol_id= 1221;
+        let sql = `CALL sp_create_user('${id_user}','${username}','${email}','${newpassword}','${direccion}','${telefono}','${dni}','${rol_id}')`;
+        const pool = mysql.createPool(config_mysql)
+        const promiseQuery = promisify(pool.query).bind(pool)
+        const promisePoolEnd = promisify(pool.end).bind(pool)
+        const result = await promiseQuery(sql)
     
-    const newUser= new User({
-        username,
-        email,
-        password: await User.encryptPassword(password)
-    })
+        promisePoolEnd()
+        const usuario = Object.values(JSON.parse(JSON.stringify(result[0])));
+        return res.status(200).json(
+          {
+            status: 200,
+            message: "Se ha creado el usuario correctamente ",
+            data: usuario
+          }
+        );      
 
-    // Comprobando si me esta enviando roles:
-    if(roles) {
-        const foundRoles =await Role.find({name:{$in :roles}})
-        newUser.roles= foundRoles.map(role => role._id)
-    }else{ 
-         // si esta por defecto
-        const role = await Role.findOne({name:"user"})
-        newUser.roles=[role._id];
-    }
+      } catch (error) {
+        console.log(error)
     
-   const savedUser= await newUser.save();
-    
-
-   const token =jwt.sign({id:savedUser._id},config.SECRET,{
-        expiresIn:86400 // 24 horas
-    })
-
-    res.status(200).json({token})
-
-
+        return res.status(500).json(
+          {
+            status: 500,
+            message: "Se ha producido un ERROR al crear el  usuario",
+            error
+          }
+        );
+      }       
+   
 }
 
 export const signIn = async (req, res) => {
-    const userFound= await User.findOne({email: req.body.email}).populate("roles");   
+    //const userFound= await User.findOne({email: req.body.email}).populate("roles");   
+    const correo=  req.body.email;
+    const contrasenia=  req.body.password;
+    let sql = `CALL sp_get_user_correo('${correo}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
 
-    if(userFound.estado =="inhabilitado") return res.status(403).json({message:"Usuario no encontrado - i"})
+    promisePoolEnd()
+    const userFound = Object.values(JSON.parse(JSON.stringify(result[0])));
+
+    if(userFound.estado =="inhabilitado") return res.status(403).json({message:"Usuario sin Permisos"})
     if(!userFound) return res.status(400).json({message:"Usuario no encontrado"})
 
-    const matchPassword= await User.comparePassword(req.body.password, userFound.password)
+    const matchPassword= await comparePassword(contrasenia, userFound.password)
 
     if(!matchPassword) return res.status(401).json({token: null, message: 'Contraseña invalida'})
-
     
-    const roles= await Role.find({_id: { $in: userFound.roles} });
+    const roles= userFound.rol;
     
-    console.log(roles)
-    
-    let rol="";
+    console.log(roles)       
 
-    try {
-        rol=roles[0].name    
-        
-    } catch (error) {
-        return res.json({
-            message:"No se encontro rol"
-        })
-    }            
-    console.log(rol)
-
-    const token= jwt.sign({id: userFound._id, username: userFound.username, rol: rol}, config.SECRET,{
+    const token= jwt.sign({id: userFound.id, username: userFound.username, rol: roles}, config.SECRET,{
         expiresIn: 86400
     })
 
-    res.json({token})
+    res.status(200).json({token})
     
 }
