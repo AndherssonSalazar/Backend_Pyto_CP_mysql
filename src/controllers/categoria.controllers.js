@@ -138,13 +138,12 @@ export const getCategoriaByName = async (req, res) => {
 export const createCategoria = async (req, res) => {
   try {
     const {
-      id,
       codigo,
       nombre,
       id_usuario
     } = req.body;
 
-    let sql = `CALL sp_generar_categoria('${id}','${codigo}','${nombre}','${id_usuario}')`;
+    let sql = `CALL sp_generar_categoria('${codigo}','${nombre}','${id_usuario}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
