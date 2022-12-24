@@ -9,7 +9,7 @@ var config_mysql = require('../config_mysql.js')
  las categorias habilitadas*/
 export const getCategorias = async (req, res) => {
   try {
-    let sql = `CALL sp_get_categorias()`;
+    let sql = `CALL sp_obtener_categorias_habilitado()`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -37,7 +37,7 @@ export const getCategorias = async (req, res) => {
  las categorias inhabilitadas*/
 export const getCategoriasInhabilitadas = async (req, res) => {
   try {
-    let sql = `CALL sp_get_categorias_inhabilitadas()`;
+    let sql = `CALL sp_obtener_categorias_inhabilitadas()`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -72,7 +72,7 @@ export const getCategoriaByCode = async (req, res) => {
   try {
     const { codigo } = req.params;
 
-    let sql = `CALL sp_get_categoria_by_code('${codigo}')`;
+    let sql = `CALL sp_obtener_categoria_por_code('${codigo}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -105,7 +105,7 @@ export const getCategoriaByName = async (req, res) => {
   try {
     const { name } = req.params;
 
-    let sql = `CALL sp_get_categoria_by_name('${name}')`;
+    let sql = `CALL sp_obtener_categoria_por_nombre('${name}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -144,7 +144,7 @@ export const createCategoria = async (req, res) => {
       id_usuario
     } = req.body;
 
-    let sql = `CALL sp_create_categoria('${id}','${codigo}','${nombre}','${id_usuario}')`;
+    let sql = `CALL sp_generar_categoria('${id}','${codigo}','${nombre}','${id_usuario}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -181,7 +181,7 @@ export const updateCategoriaInhabilitar = async (req, res) => {
   try {
     const {_id} = req.params;
 
-    let sql = `CALL sp_update_categoria_inhabilitar('${_id}')`;
+    let sql = `CALL sp_actualizar_categoria_inhabilitar('${_id}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -214,7 +214,7 @@ export const updateCategoriaHabilitar = async (req, res) => {
   try {
     const {_id} = req.params;
 
-    let sql = `CALL sp_update_categoria_habilitar('${_id}')`;
+    let sql = `CALL sp_actualizar_categoria_habilitar('${_id}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
