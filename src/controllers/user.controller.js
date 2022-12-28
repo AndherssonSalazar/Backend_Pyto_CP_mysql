@@ -146,50 +146,47 @@ export const getUserDni = async (req, res) => {
 
 };
 /* el codigo aqui permite editar un usuario*/
-// export const updateUserById = async (req, res) => {
-//   try {
-//     const { username, email, dni, passwordNE, roles } = req.body;
-//     const rolesFound = await Role.find({ name: { $in: roles } });
+export const updateUserById = async (req, res) => {
+  try {
+    const { email, password ,telefono, direccion,rol } = req.body;   
+    const { _id } = req.params;
+    // Encriptando contraseñ al editar
+    const contrasenia= await hashPassword(password);
 
-//     const { _id } = req.params;
-//     // Encriptando contraseñ al editar
-//     const password = await User.encryptPassword(passwordNE);
+    let sql = `CALL sp_actualizar_usuario_por_id('${_id}','${email}','${contrasenia}','${telefono}','${direccion}','${rol}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
 
-//     const User_upd = await User.findOneAndUpdate(
-//       { _id },
-//       {
-//         username,
-//         dni,
-//         email,
-//         password,
-//         roles: rolesFound.map((role) => role._id),
+    const result = await promiseQuery(sql)
 
-//       }
-//     );
+    promisePoolEnd()
+    const usuario_updated = Object.values(JSON.parse(JSON.stringify(result[0])));
+    if (!usuario_updated.length==1) {
+      return res.json({
+        status: 404,
+        message: "No se encontró al usuario que se quiere editar",
+      });
+    }
+    return res.json(
+      {
+        status: 200,
+        message: "Se ha actualizado al usuario correctamente ",
+        data: usuario_updated
+      }
+    );   
+   
+  } catch (error) {
+    console.log(error);
+    return res.json({
+      status: 500,
+      message: "Ha aparecido un ERROR al momento de actualizar a un usuario",
 
-//     if (!User_upd) {
-//       return res.json({
-//         status: 404,
-//         message: "No se encontró al usuario que se quiere editar",
-//       });
-//     }
-//     const updated_user = await User.findOne({ _id });
-//     return res.json({
-//       status: 200,
-//       message: "Se ha actualizado el usuario",
-//       data: updated_user,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.json({
-//       status: 500,
-//       message: "Ha aparecido un ERROR al momento de actualizar a un user",
-
-//     });
-//   }
+    });
+  }
 
 
-// }
+}
 /* el codigo aqui permite dar de baja a un usuario*/
 export const updateUserInhabilitar = async (req, res) => {
   try {
