@@ -1,5 +1,3 @@
-import Producto from '../models/m_producto'
-
 let mysql = require('mysql');
 const { promisify } = require('util')
 var config_mysql = require('../config_mysql.js')
@@ -10,7 +8,7 @@ var config_mysql = require('../config_mysql.js')
 
 export const getProductos = async (req, res) => {
      try {
-      let sql = `CALL sp_get_productos()`;
+      let sql = `CALL sp_obtener_productos_habilitado()`;
       const pool = mysql.createPool(config_mysql)
       const promiseQuery = promisify(pool.query).bind(pool)
       const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -40,7 +38,7 @@ export const getProductos = async (req, res) => {
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const getProductosInhabilitados = async (req, res) => {
   try {
-    let sql = `CALL sp_get_productos_inhabilitados()`;
+    let sql = `CALL sp_obtener_productos_inhabilitados()`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -69,7 +67,7 @@ export const getProductosInhabilitados = async (req, res) => {
 /* Agregamos codigo de status 404 para los errores de no encontrarse los productos*/
 export const getProductoByStockMinimo= async (req, res) => {
   try {
-    let sql = `CALL sp_get_producto_by_stock_minimo()`;
+    let sql = `CALL sp_obtener_producto_por_stock_minimo()`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -101,7 +99,7 @@ export const getProductoByCode = async (req, res) => {
   try {
     const { codigo } = req.params;
 
-    let sql = `CALL sp_get_producto_by_code('${codigo}')`;
+    let sql = `CALL sp_obtener_producto_por_code('${codigo}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -132,7 +130,7 @@ export const getProductoById = async (req, res) => {
   try {
     const {_id} = req.params;
 
-    let sql = `CALL sp_get_producto_by_id('${_id}')`;
+    let sql = `CALL sp_obtener_producto_por_id('${_id}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -169,7 +167,6 @@ export const getProductoById = async (req, res) => {
 export const createProducto = async (req, res) => {
     try {
         const {
-          id,
           nombre,
           id_categoria,   
           id_usuario,
@@ -177,10 +174,11 @@ export const createProducto = async (req, res) => {
           unidad_medida,
           costo,
           descripcion,
+          precio,
           stock,
           stock_min
         } = req.body;
-        let sql = `CALL sp_create_producto('${id}','${nombre}','${id_categoria}','${id_usuario}','${codigo}','${unidad_medida}','${costo}','${descripcion}','${stock}','${stock_min}')`;
+        let sql = `CALL sp_generar_producto('${nombre}','${id_categoria}','${id_usuario}','${codigo}','${unidad_medida}','${costo}','${descripcion}','${precio}','${stock}','${stock_min}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -209,60 +207,51 @@ export const createProducto = async (req, res) => {
 
 }
 
-// export const updateProductById= async (req, res) => {
-//     try {
-//             const {
-//               codigo,
-//               nombre,
-//               stock,
-//               stockMinimo,
-//               costo,
-//               nomCategoria,
-//               descripcion,
-//               precio,
+export const updateProductById= async (req, res) => {
+    try {
+            const {
               
-//             } = req.body;
-        
-//             const { _id } = req.params;
-        
-//             const Producto_upd = await Producto.findOneAndUpdate(
-//               { _id },
-//               {
-//               codigo,
-//               nombre,
-//               stock,
-//               stockMinimo,
-//               costo,
-//               nomCategoria,
-//               descripcion,
-//               precio,
-//               }
-//             );
-//             if (!Producto_upd) {
-//               return res.json({
-//                 status: 404,
-//                 message: "No se encontró al producto que se quiere editar",
-//               });
-//             }
-        
-//             const updated_product = await Producto.findOne({ _id });
-        
-//             return res.json({
-//               status: 200,
-//               message: "Se ha actualizado el producto",
-//               data: updated_product,
-//             });
-//           } catch (error) {
-//             console.log(error);
-//             return res.json({
-//               status: 500,
-//               message: "Ha aparecido un ERROR al momento de actualizar a un producto",
+              stock_min,              
+              descripcion,
+              precio,
               
-//             });
-//           }
+            } = req.body;
+        
+            const { _id } = req.params;
+            
+            let sql = `CALL sp_actualizar_producto_por_id('${_id}','${stock_min}','${descripcion}','${precio}')`;
+            const pool = mysql.createPool(config_mysql)
+            const promiseQuery = promisify(pool.query).bind(pool)
+            const promisePoolEnd = promisify(pool.end).bind(pool)
+
+            const result = await promiseQuery(sql)
+
+            promisePoolEnd()
+            const Producto_upd = Object.values(JSON.parse(JSON.stringify(result[0])));
+                  
+            if (!Producto_upd.length==1) {
+              return res.json({
+                status: 404,
+                message: "No se encontró al producto que se quiere editar",
+              });
+            }        
+                   
+            return res.json({
+              status: 200,
+              message: "Se ha actualizado el producto",
+              data: Producto_upd,
+            });
+          } catch (error) {
+            console.log(error);
+            return res.json({
+              status: 500,
+              message: "Ha aparecido un ERROR al momento de actualizar a un producto",
+              
+            });
+          }
          
 
-// }
+}
 
 /* el codigo aqui permite dar de baja a un producto*/
 // Autor: Anderson Salazar
@@ -272,7 +261,7 @@ export const updateProductInhabilitar= async (req, res) => {
   try {
     const {_id} = req.params;
 
-    let sql = `CALL sp_update_product_inhabilitar('${_id}')`;
+    let sql = `CALL sp_actualizar_producto_inhabilitar('${_id}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
@@ -305,7 +294,7 @@ export const updateProductHabilitar= async (req, res) => {
   try {
     const {_id} = req.params;
 
-    let sql = `CALL sp_update_product_habilitar('${_id}')`;
+    let sql = `CALL sp_actualizar_categoria_habilitar('${_id}')`;
     const pool = mysql.createPool(config_mysql)
     const promiseQuery = promisify(pool.query).bind(pool)
     const promisePoolEnd = promisify(pool.end).bind(pool)
