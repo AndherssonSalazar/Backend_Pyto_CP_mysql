@@ -5,6 +5,11 @@ import config from "../config";
 import User from '../models/m_user'
 import Role from '../models/m_role'
 
+
+let mysql = require('mysql');
+const { promisify } = require('util')
+var config_mysql = require('../config_mysql.js')
+
 // Jonatan Pacora Vega
 // 17/10/22
 // Esta funcion es para verificacion del token de sesion
@@ -16,9 +21,16 @@ export const verifyToken= async (req, res,next) => {
     
         const decoded = jwt.verify(token,config.SECRET)
         req.userId=decoded.id;
-    
-        const user = await User.findById(req.userId,{password:0})
-        if(!user) return res.status(404).json({message: "usuario no encontrado"})
+
+        let sql = `CALL sp_obtener_usuario_id('${req.userId}')`;
+        const pool = mysql.createPool(config_mysql)
+        const promiseQuery = promisify(pool.query).bind(pool)
+        const promisePoolEnd = promisify(pool.end).bind(pool)
+        const result = await promiseQuery(sql)
+        promisePoolEnd()
+        const userFound = Object.values(JSON.parse(JSON.stringify(result[0])));  
+            
+        if(!userFound.length==1) return res.status(404).json({message: "usuario no encontrado"})
     
         next()
     } catch (error) {
@@ -28,10 +40,16 @@ export const verifyToken= async (req, res,next) => {
 };
 // Esta funcion es para verificacion de que el usuario logueado es un Jefe de Almacen
 export const isJefeAlmacen= async (req, res,next) => {
-  const user=await User.findById(req.userId);
-  const roles= await Role.find({_id: { $in: user.roles} });
+  let sql = `CALL sp_obtener_usuario_id('${req.userId}')`;
+  const pool = mysql.createPool(config_mysql)
+  const promiseQuery = promisify(pool.query).bind(pool)
+  const promisePoolEnd = promisify(pool.end).bind(pool)
+  const result = await promiseQuery(sql)
+  promisePoolEnd()
+  const user = Object.values(JSON.parse(JSON.stringify(result[0])));
+  const rol=user[0].rol ;
 
-    if(roles[0].name === "jefe_almacen"){
+    if(rol == 120){
         next();
         return;
     }
@@ -40,38 +58,56 @@ export const isJefeAlmacen= async (req, res,next) => {
 };
 // Esta funcion es para verificacion de que el usuario logueado es un Administrador
 export const isAdmin= async (req, res,next) => {
-    const user=await User.findById(req.userId);
-    console.log(user.roles)
-    const roles= await Role.find({_id: { $in: user.roles} });
-    
-    if(roles[0].name === "admin"){
-          next();
-          return;
-      }
-    
-   return res.status(403).json({message:"Requiere Rol Admin"});
+  let sql = `CALL sp_obtener_usuario_id('${req.userId}')`;
+  const pool = mysql.createPool(config_mysql)
+  const promiseQuery = promisify(pool.query).bind(pool)
+  const promisePoolEnd = promisify(pool.end).bind(pool)
+  const result = await promiseQuery(sql)
+  promisePoolEnd()
+  const user = Object.values(JSON.parse(JSON.stringify(result[0])));
+  const rol=user[0].rol ;
+
+    if(rol == 100){
+        next();
+        return;
+    }
+  
+ return res.status(403).json({message:"Requiere Rol de Admin"});
   };
 
 // Esta funcion es para verificacion de que el usuario logueado es un Almacenero
  export const isALmacenero= async (req, res,next) => {
-    const user=await User.findById(req.userId);
-    const roles= await Role.find({_id: { $in: user.roles} });
+  let sql = `CALL sp_obtener_usuario_id('${req.userId}')`;
+  const pool = mysql.createPool(config_mysql)
+  const promiseQuery = promisify(pool.query).bind(pool)
+  const promisePoolEnd = promisify(pool.end).bind(pool)
+  const result = await promiseQuery(sql)
+  promisePoolEnd()
+  const user = Object.values(JSON.parse(JSON.stringify(result[0])));
+  const rol=user[0].rol ;
+
+    if(rol == 121){
+        next();
+        return;
+    }
   
-      if(roles[0].name === "almacenero"){
-          next();
-          return;
-      }
-    return res.status(403).json({message:"Requiere Rol Almacenero"});
+ return res.status(403).json({message:"Requiere Rol de Almacenero"});
    };
 
    export const isJefeOrAlmacenero= async (req, res,next) => {
-    const user=await User.findById(req.userId);
-    const roles= await Role.find({_id: { $in: user.roles} });
-  
-      if(roles[0].name === "almacenero" || roles[0].name === "jefe_almacen"){
+    let sql = `CALL sp_obtener_usuario_id('${req.userId}')`;
+    const pool = mysql.createPool(config_mysql)
+    const promiseQuery = promisify(pool.query).bind(pool)
+    const promisePoolEnd = promisify(pool.end).bind(pool)
+    const result = await promiseQuery(sql)
+    promisePoolEnd()
+    const user = Object.values(JSON.parse(JSON.stringify(result[0])));
+    const rol=user[0].rol ;
+
+      if(rol == 120 || rol ==121){
           next();
           return;
-      }
+      }   
     return res.status(403).json({message:"Requiere Rol de Jefe o Almacenero "});
    };
 
