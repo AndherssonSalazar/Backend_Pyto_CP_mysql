@@ -1,5 +1,3 @@
-import User from "../models/m_user";
-import Role from "../models/m_role";
 import { hashPassword, comparePassword } from "../core/bcrypt";
 
 let mysql = require('mysql');

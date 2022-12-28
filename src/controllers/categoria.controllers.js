@@ -1,4 +1,3 @@
-import Categoria from '../models/m_categoria'
 let mysql = require('mysql');
 const { promisify } = require('util')
 var config_mysql = require('../config_mysql.js')
