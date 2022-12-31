@@ -11,12 +11,12 @@ resources:
 variables:
 
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '5fb4d7de-d7c2-45f1-af00-ec3a1d3de810'
+  dockerRegistryServiceConnection: 'ba3242fc-d733-44e1-a5bf-b4bd08e92701'
   imageRepository: 'andherssonsalazarbackendpytocpmysql'
   containerRegistry: 'contenedorrafaga3.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
-  imagePullSecret: 'contenedorrafaga32903-auth'
+  imagePullSecret: 'contenedorrafaga349531072-auth'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -53,7 +53,7 @@ stages:
     displayName: Deploy
     pool:
       vmImage: $(vmImageName)
-    environment: 'AndherssonSalazarBackendPytoCPmysql.default'
+    environment: 'AndherssonSalazarBackendPytoCPmysql-7201.default'
     strategy:
       runOnce:
         deploy:
