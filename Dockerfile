@@ -1,8 +1,8 @@
-FROM node:18
+FROM node:latest
 
 WORKDIR /user/src/app
 
-COPY package*.json .babelrc ./
+COPY package*.json ./
 
 RUN npm install
 
