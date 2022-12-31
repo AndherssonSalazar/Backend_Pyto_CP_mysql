@@ -1,0 +1,10 @@
+version: "3.4"
+services:
+  back_servicio:
+    image: backend_pyto_cp_mysql
+    ports:
+      - "4000:4000"
+    volumes:
+      - type: bind
+        source: ./
+        target: /app
