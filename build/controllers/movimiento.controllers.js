@@ -18,13 +18,9 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-var mysql = require('mysql');
-var _require = require('util'),
-  promisify = _require.promisify;
-var config_mysql = require('../config_mysql.js');
 var pdf = require("html-pdf");
 var fs = require('fs');
-var ubicacionPlantilla = require.resolve("./../design_pdf/factura.html");
+//const ubicacionPlantilla = require.resolve("./../design_pdf/factura.html");
 
 // Autor: Jonatan Pacora
 // 30/11/22
@@ -520,55 +516,45 @@ var updateAnular = /*#__PURE__*/function () {
 exports.updateAnular = updateAnular;
 var getMovimientosAprobados = /*#__PURE__*/function () {
   var _ref5 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(req, res) {
-    var sql, pool, promiseQuery, promisePoolEnd, result, movimientos;
+    var movimientos;
     return _regeneratorRuntime().wrap(function _callee5$(_context5) {
       while (1) {
         switch (_context5.prev = _context5.next) {
           case 0:
             _context5.prev = 0;
-            sql = "CALL sp_get_categorias()";
-            pool = mysql.createPool(config_mysql);
-            promiseQuery = promisify(pool.query).bind(pool);
-            promisePoolEnd = promisify(pool.end).bind(pool);
-            _context5.next = 7;
-            return promiseQuery(sql);
-          case 7:
-            result = _context5.sent;
-            promisePoolEnd();
-            //const movimientos = Object.values(JSON.parse(JSON.stringify(result[0])));
-            _context5.next = 11;
+            _context5.next = 3;
             return _m_movimiento["default"].find({
               estado: "Aprobado"
             });
-          case 11:
+          case 3:
             movimientos = _context5.sent;
             if (movimientos) {
-              _context5.next = 14;
+              _context5.next = 6;
               break;
             }
             return _context5.abrupt("return", res.status(404).json({
               status: 404,
               message: "No se encontró a los mov Aprobados"
             }));
-          case 14:
+          case 6:
             return _context5.abrupt("return", res.status(200).json({
               status: 200,
               message: "Se ha obtenido los mov Aprobados",
               data: movimientos
             }));
-          case 17:
-            _context5.prev = 17;
+          case 9:
+            _context5.prev = 9;
             _context5.t0 = _context5["catch"](0);
             return _context5.abrupt("return", res.status(500).json({
               status: 500,
               message: "Se ha producido un ERROR al obtener los mov Aprobados"
             }));
-          case 20:
+          case 12:
           case "end":
             return _context5.stop();
         }
       }
-    }, _callee5, null, [[0, 17]]);
+    }, _callee5, null, [[0, 9]]);
   }));
   return function getMovimientosAprobados(_x8, _x9) {
     return _ref5.apply(this, arguments);
@@ -633,88 +619,29 @@ var getMovimientosAnulados = /*#__PURE__*/function () {
 exports.getMovimientosAnulados = getMovimientosAnulados;
 var getReporte = /*#__PURE__*/function () {
   var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(req, res) {
-    var codigo, movimiento, contenidoHtml, productos, formateador, tabla, subtotal, _iterator4, _step4, producto, totalProducto, descuento, subtotalConDescuento, impuestos, total, f, fecha_archivo, archivo_generado;
     return _regeneratorRuntime().wrap(function _callee7$(_context7) {
       while (1) {
         switch (_context7.prev = _context7.next) {
           case 0:
             _context7.prev = 0;
-            codigo = req.params.codigo;
-            _context7.next = 4;
-            return _m_movimiento["default"].findOne({
-              codigo: codigo
-            });
-          case 4:
-            movimiento = _context7.sent;
-            contenidoHtml = fs.readFileSync(ubicacionPlantilla, 'utf8');
-            productos = movimiento.lista_items;
-            formateador = new Intl.NumberFormat("en", {
-              style: "currency",
-              "currency": "PEN"
-            }); // Generar el HTML de la tabla
-            tabla = "";
-            subtotal = 0;
-            _iterator4 = _createForOfIteratorHelper(productos);
-            try {
-              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                producto = _step4.value;
-                // Aumentar el total
-                totalProducto = producto.cantidad * producto.precio;
-                subtotal += totalProducto;
-                // Y concatenar los productos
-                tabla += "<tr>\n        <td>".concat(producto.nombre, "</td>\n        <td>").concat(producto.descripcion, "</td>\n        <td>").concat(producto.cantidad, "</td>\n        <td>").concat(formateador.format(producto.precio), "</td>\n        <td>").concat(formateador.format(totalProducto), "</td>\n        </tr>");
-              }
-            } catch (err) {
-              _iterator4.e(err);
-            } finally {
-              _iterator4.f();
-            }
-            descuento = 0;
-            subtotalConDescuento = subtotal - descuento;
-            impuestos = subtotalConDescuento * 0.16;
-            total = subtotalConDescuento + impuestos; // Remplazar el valor {{tablaProductos}} por el verdadero valor
-            contenidoHtml = contenidoHtml.replace("{{tablaProductos}}", tabla);
-
-            // Y también los otros valores
-
-            contenidoHtml = contenidoHtml.replace("{{fecha}}", movimiento.fecha.toLocaleDateString());
-            contenidoHtml = contenidoHtml.replace("{{estado}}", movimiento.estado);
-            contenidoHtml = contenidoHtml.replace("{{tipo}}", movimiento.tipo);
-            contenidoHtml = contenidoHtml.replace("{{factura}}", movimiento.factura);
-            contenidoHtml = contenidoHtml.replace("{{responsable}}", movimiento.name_responsable);
-            //contenidoHtml = contenidoHtml.replace("{{subtotal}}", formateador.format(subtotal));
-            //contenidoHtml = contenidoHtml.replace("{{descuento}}", formateador.format(descuento));
-            //contenidoHtml = contenidoHtml.replace("{{subtotalConDescuento}}", formateador.format(subtotalConDescuento));
-            //contenidoHtml = contenidoHtml.replace("{{impuestos}}", formateador.format(impuestos));
-            contenidoHtml = contenidoHtml.replace("{{total}}", formateador.format(subtotal));
-            f = new Date();
-            fecha_archivo = f.toLocaleDateString().replaceAll('/', '-');
-            archivo_generado = "./archivos/movimiento-" + movimiento.codigo + " - " + fecha_archivo + ".pdf";
-            pdf.create(contenidoHtml).toFile(archivo_generado, function (error) {
-              if (error) {
-                console.log("Error creando PDF: " + error);
-              } else {
-                console.log("PDF creado correctamente");
-              }
-            });
             return _context7.abrupt("return", res.status(200).json({
               status: 200,
               message: "Se ha obtenido el reporte",
-              data: archivo_generado
+              data: "gg"
             }));
-          case 30:
-            _context7.prev = 30;
+          case 4:
+            _context7.prev = 4;
             _context7.t0 = _context7["catch"](0);
             return _context7.abrupt("return", res.status(500).json({
               status: 500,
               message: "Se ha producido un ERROR al obtener el reporte"
             }));
-          case 33:
+          case 7:
           case "end":
             return _context7.stop();
         }
       }
-    }, _callee7, null, [[0, 30]]);
+    }, _callee7, null, [[0, 4]]);
   }));
   return function getReporte(_x12, _x13) {
     return _ref7.apply(this, arguments);

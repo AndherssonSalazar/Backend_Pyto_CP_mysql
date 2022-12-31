@@ -14,9 +14,5 @@ router.get('/searchByCode/:codigo', [_middlewares.authJwt.verifyToken, _middlewa
 router.put('/anular_mov/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeAlmacen], movCtrl.updateAnular);
 router.get('/aprobados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAprobados);
 router.get('/anulados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAnulados);
-//router.get('/salida/aprobados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosSalidaAprobados);
-//router.get('/salida/anulados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosSalidaAnulados);
-//router.get('/entrada/aprobados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosEntradaAprobados);
-//router.get('/entrada/anulados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosEntradaAnulados);
 router.get('/reporte/:codigo' /*,[authJwt.verifyToken,authJwt.isJefeOrAlmacenero]*/, movCtrl.getReporte);
 module.exports = router;

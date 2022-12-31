@@ -5,9 +5,6 @@ import { InternalServerException } from "../exceptions/InternalServerException";
 import { NotFoundException } from "../exceptions/NotFoundException";
 import ERROR_MESSAGE from "../constants/error.enum";
 
-const pdf = require("html-pdf");
-const fs = require('fs');
-const ubicacionPlantilla = require.resolve("./../design_pdf/factura.html");
 
 // Autor: Jonatan Pacora
 // 30/11/22
@@ -355,7 +352,7 @@ export const getMovimientosAnulados = async (req, res) => {
  CUS 29 generar reporte de movimiento*/
 export const getReporte = async (req, res) => {
   try{
-    const { codigo } = req.params;
+    /*const { codigo } = req.params;
     let movimiento = await Movimiento.findOne({ codigo: codigo });
     let contenidoHtml = fs.readFileSync(ubicacionPlantilla, 'utf8')
     var productos=movimiento.lista_items
@@ -409,6 +406,11 @@ export const getReporte = async (req, res) => {
       {status: 200,
        message: "Se ha obtenido el reporte",
        data: archivo_generado}
+     );*/
+     return res.status(200).json(
+      {status: 200,
+       message: "Se ha obtenido el reporte",
+       data: "gg"}
      );
   } catch (error) {
     return res.status(500).json(
