@@ -77,12 +77,20 @@ export const signIn = async (req, res) => {
     
     const roles= userFound[0].rol;
     
-   // console.log('role',roles)       
+   // console.log('role',roles)
 
+    const id =userFound[0].id;
+    const rol_id=userFound[0].rol;
+    const nombre=userFound[0].username ;
     const token= jwt.sign({id: userFound[0].id, username: userFound[0].username, rol: roles}, config.SECRET,{
         expiresIn: 86400
     })
 
-    res.status(200).json({token})
+    res.status(200).json({
+      id,rol_id,nombre,token
+
+    
+    
+    })
     
 }
