@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: andherssonsalazarbackendpytocpmysql 
-          image: contenedorrafaga3.azurecr.io/andherssonsalazarbackendpytocpmysql
+          image: contenedorrafaga4.azurecr.io/andherssonsalazarbackendpytocpmysql
           ports:
           - containerPort: 4000
