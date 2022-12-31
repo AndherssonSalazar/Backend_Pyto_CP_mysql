@@ -2,7 +2,7 @@ FROM node:18
 
 WORKDIR /user/src/app
 
-COPY package*.json .babelrc.json ./
+COPY package*.json .babelrc ./
 
 RUN npm install
 
