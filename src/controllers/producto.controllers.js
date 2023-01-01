@@ -1,6 +1,7 @@
 let mysql = require('mysql');
 const { promisify } = require('util')
 var config_mysql = require('../config_mysql.js')
+import * as categoriasCtrl from '../controllers/categoria.controllers';
 
 // Autor: Anderson Salazar
 // 27/10/22
@@ -15,6 +16,9 @@ export const getProductos = async (req, res) => {
       const result = await promiseQuery(sql)
       promisePoolEnd()
       const productos = Object.values(JSON.parse(JSON.stringify(result[0])));
+
+
+
       return res.json(
         {
           status: 200,

@@ -61,11 +61,28 @@ export const getUsers = async (req, res) => {
     const result = await promiseQuery(sql)
     promisePoolEnd()
     const usuarios = Object.values(JSON.parse(JSON.stringify(result[0])));
+    for (var i = 0; i < usuarios.length; i++) {
+        if(usuarios[i].rol == 100){
+          usuarios[i].rol_display = "Administrador"; 
+        }
+        if(usuarios[i].rol == 120)
+        {
+          usuarios[i].rol_display = "Jefe de Almacen"; 
+        }
+        if(usuarios[i].rol == 121)
+        {
+          usuarios[i].rol_display = "Almacenero";
+        }
+        
+  }
+    
+    
     return res.json(
       {
         status: 200,
         message: "Se ha obtenido los usuarioos habilitados",
         data: usuarios
+       
       }
     );
   } catch (error) {
@@ -91,6 +108,20 @@ export const getUsersInhabiltados = async (req, res) => {
     const result = await promiseQuery(sql)
     promisePoolEnd()
     const usuarios = Object.values(JSON.parse(JSON.stringify(result[0])));
+    for (var i = 0; i < usuarios.length; i++) {
+      if(usuarios[i].rol == 100){
+        usuarios[i].rol_display = "Administrador"; 
+      }
+      if(usuarios[i].rol == 120)
+      {
+        usuarios[i].rol_display = "Jefe de Almacen"; 
+      }
+      if(usuarios[i].rol == 121)
+      {
+        usuarios[i].rol_display = "Almacenero";
+      }
+      
+}
     return res.json(
       {
         status: 200,
@@ -124,6 +155,20 @@ export const getUserDni = async (req, res) => {
 
     promisePoolEnd()
     const usuario = Object.values(JSON.parse(JSON.stringify(result[0])));
+    for (var i = 0; i < usuario.length; i++) {
+      if(usuario[i].rol == 100){
+        usuario[i].rol_display = "Administrador"; 
+      }
+      if(usuario[i].rol == 120)
+      {
+        usuario[i].rol_display = "Jefe de Almacen"; 
+      }
+      if(usuario[i].rol == 121)
+      {
+        usuario[i].rol_display = "Almacenero";
+      }
+      
+}
     return res.json(
       {
         status: 200,
