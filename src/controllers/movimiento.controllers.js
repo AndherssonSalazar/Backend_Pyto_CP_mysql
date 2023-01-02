@@ -1,9 +1,14 @@
 import Movimiento from "../models/m_movimiento";
+import MovimientoEntrada from "../models/m_movimiento_entrada";
+import MovimientoSalida from "../models/m_movimiento_salida";
 import Producto from "../models/m_producto";
 import { BadRequestException } from "../exceptions/BadRequestException";
 import { InternalServerException } from "../exceptions/InternalServerException";
 import { NotFoundException } from "../exceptions/NotFoundException";
 import ERROR_MESSAGE from "../constants/error.enum";
+let mysql = require('mysql');
+const { promisify } = require('util')
+var config_mysql = require('../config_mysql.js')
 
 
 // Autor: Jonatan Pacora
@@ -416,6 +421,592 @@ export const getReporte = async (req, res) => {
     return res.status(500).json(
       {status: 500,
       message: "Se ha producido un ERROR al obtener el reporte",
+      }
+      );
+  }
+}
+
+
+//---------------------------------- movimientos de entrada-----------------------------------
+export const createMovimientoEntrada = async (req, res) => {
+  try {
+    const {
+      codigo,
+      orden_compra,
+      fecha,
+      id_usuario,
+      proveedor,
+      lista_items,
+    } = req.body;
+
+    if (!lista_items.length) {
+      return res
+        .status(ERROR_MESSAGE.NOT_FOUND)
+        .json({ message: "No se recibieron los items del movimiento entrada" });
+    }
+
+    const productsArray = [];
+    for (let item of lista_items) {
+      try {
+        const item_code = item.codigo_product;
+        let sql = `CALL sp_obtener_producto_por_code('${item_code}')`;
+        const pool = mysql.createPool(config_mysql)
+        const promiseQuery = promisify(pool.query).bind(pool)
+        const promisePoolEnd = promisify(pool.end).bind(pool)
+        const result = await promiseQuery(sql)
+        promisePoolEnd()
+        const Producto_item = JSON.parse(JSON.stringify(result[0][0]));
+        console.log("old stock", Producto_item.stock);
+        let stock_new = Producto_item.stock + item.cantidad;
+        console.log("new stock", stock_new);
+        let code_product = item.codigo_product;
+        // Actualizar Colleccion Productos
+        let sql2 = `CALL sp_actualizar_stock_producto_por_codigo('${item_code}','${stock_new}')`;
+        const pool2 = mysql.createPool(config_mysql)
+        const promiseQuery2 = promisify(pool2.query).bind(pool2)
+        const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+        const result2 = await promiseQuery2(sql2)
+        promisePoolEnd2()
+        const Producto_upd = JSON.parse(JSON.stringify(result2[0][0]));
+        if (!Producto_upd) {
+          return res.status(ERROR_MESSAGE.NOT_FOUND).json({
+            message: "No se encontró al producto que se quiere añadir",
+          });
+        }
+        let sql3 = `CALL sp_obtener_producto_por_code('${item_code}')`;
+        const pool3 = mysql.createPool(config_mysql)
+        const promiseQuery3 = promisify(pool3.query).bind(pool3)
+        const promisePoolEnd3 = promisify(pool3.end).bind(pool3)
+        const result3 = await promiseQuery3(sql3)
+        promisePoolEnd3()
+        const updated_product = JSON.parse(JSON.stringify(result3[0][0]));
+
+        productsArray.push(updated_product);
+      } catch (error) {
+        console.log(error);
+        return res.status(ERROR_MESSAGE.INTERNAL_SERVER_ERROR).json({
+          message: "Ha aparecido un ERROR al momento de crear el movimiento de entrada",
+        });
+      }
+    }
+    let sql4 = `CALL sp_crear_movimiento_entrada('${id_usuario}', '${codigo}', '${orden_compra}', '${proveedor}')`;
+    const pool4 = mysql.createPool(config_mysql)
+    const promiseQuery4 = promisify(pool4.query).bind(pool4)
+    const promisePoolEnd4 = promisify(pool4.end).bind(pool4)
+    const result4 = await promiseQuery4(sql4)
+    promisePoolEnd4()
+    const MovSaved = JSON.parse(JSON.stringify(result4[0][0]));
+    var a=MovSaved;
+    for (let i=0; i<lista_items.length; i++){
+      let sql5 = `CALL sp_generar_item_movimiento_entrada('${a.id}', '${productsArray[i].id}', '${productsArray[i].precio}', '${lista_items[i].cantidad}')`;
+      const pool5 = mysql.createPool(config_mysql)
+      const promiseQuery5 = promisify(pool5.query).bind(pool5)
+      const promisePoolEnd5 = promisify(pool5.end).bind(pool5)
+      const result5 = await promiseQuery5(sql5)
+      promisePoolEnd5()
+      const MovSaved = JSON.parse(JSON.stringify(result5[0][0]));
+    }
+    return res.json({
+      status: 200,
+      movimiento: MovSaved,
+      updated_product: productsArray,
+      message: "Se ha creado el Movimiento de entrada correctamente",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(ERROR_MESSAGE.INTERNAL_SERVER_ERROR).json({
+      message:
+        "Se ha generado un error al momento de crear el movimiento de entrada: " + error,
+    });
+  }
+};
+
+export const getMovimientoByCodeEntrada = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    let movimiento = await Movimiento.findOne({ codigo: codigo });
+    if (!movimiento) {
+      return res.json({
+        status: 404,
+        message: "No se encontró al Movimiento",
+      });
+    }
+    return res.json({
+      status: 200,
+      message: "Se ha obtenido el movimiento por codigo",
+      data: movimiento,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Se ha producido un ERROR al obtener un movimiento por codigo",
+    });
+  }
+};
+
+export const updateAnularEntrada = async (req, res) => {
+  try {
+    const { _id } = req.params;
+
+    const movimiento_select = await Movimiento.findById({ _id });
+
+    if (!movimiento_select) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró al movimiento que se quiere anular",
+      });
+    }
+
+    const movementsArray = [];
+
+    //===== record
+    if (movimiento_select.lista_items) {
+      // un ITEM (los objects del array lista_items) tiene los campos:
+      //     codigo_product, name_product,description,categoria,
+      //     stock, precio, cantidad
+      if (movimiento_select.tipo == "Entrada") {
+        for (let item of movimiento_select.lista_items) {
+          const item_code = item.codigo_product;
+          // Obteniendo Producto del item
+          const Producto_item = await Producto.findOne({
+            codigo: item_code,
+          });
+          if (!Producto_item) {
+            return res.json({
+              status: 404,
+              message: "No se encontró el producto del item",
+            });
+          }
+          // Validación de operacion aceptada con el stock
+          if (item.cantidad > Producto_item.stock) {
+            return res.status(400).json({
+              status: 400,
+              message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
+            });
+          }
+
+          console.log("old stock", Producto_item.stock);
+          const stock_new = Producto_item.stock - item.cantidad;
+          console.log("new stock", stock_new);
+          // Actualizar Colleccion Productos
+          const Producto_upd = await Producto.findOneAndUpdate(
+            { codigo: item.codigo_product },
+            {
+              stock: stock_new,
+            }
+          );
+          if (!Producto_upd) {
+            return res.status(404).json({
+              status: 404,
+              message: "No se encontró al producto que se quiere actualizar",
+            });
+          }
+
+          const updated_product = await Producto.findOne({ codigo: item.codigo_product });
+
+          movementsArray.push(updated_product);
+        }
+      }
+      // Para los movimientos de Tipo Salida
+      else {
+        const lista_items = movimiento_select.lista_items;
+        await lista_items.forEach(async (item) => {
+          const item_code = item.codigo_product;
+          // Obteniendo el stock producto del item
+          const Producto_item = await Producto.findOne({
+            codigo: item_code,
+          });
+          if (!Producto_item) {
+            return res.json({
+              status: 404,
+              message: "No se encontró el producto del item",
+            });
+          }
+          console.log("old stock", Producto_item.stock);
+          const stock_new = Producto_item.stock + item.cantidad;
+          console.log("new stock", stock_new);
+          // Actualizar Colleccion Productos
+          const Producto_upd = await Producto.findOneAndUpdate(
+            { codigo: item.codigo_product },
+            {
+              stock: stock_new,
+            }
+          );
+          if (!Producto_upd) {
+            return res.status(404).json({
+              status: 404,
+              message: "No se encontró al producto que se quiere actuañizar",
+            });
+          }
+          const updated_product = await Producto.findOne({
+            codigo: item.codigo_product,
+          });
+
+          movementsArray.push(updated_product);
+        });
+      }
+    }
+    const updated_mov = await Movimiento.findOneAndUpdate(
+      { _id },
+      { estado: "Anulado" }
+    );
+    if (!updated_mov) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró al movimiento para anularlo",
+      });
+    }
+    const updated_movimiento = await Movimiento.findOne({ _id });
+    return res.status(200).json({
+      status: 200,
+      message: "Se ha anulado el movimiento",
+      data: updated_movimiento,
+      movimientos: movementsArray,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Ha aparecido un ERROR al momento de anular el movimiento",
+    });
+  }
+};
+
+export const getMovimientosAprobadosEntrada = async (req, res) => {
+  try{
+    const movimientos = await Movimiento.find({estado:"Aprobado"});
+    if (!movimientos) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró a los mov Aprobados",
+      });
+    }     
+    return res.status(200).json(
+      {status: 200,
+       message: "Se ha obtenido los mov Aprobados",
+       data: movimientos}
+     );
+  } catch (error) {
+    return res.status(500).json(
+      {status: 500,
+      message: "Se ha producido un ERROR al obtener los mov Aprobados",
+      }
+      );
+  }
+}
+
+export const getMovimientosAnuladosEntrada = async (req, res) => {
+  try{
+    const movimientos = await Movimiento.find({estado:"Anulado"});
+    if (!movimientos) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró a los mov Aprobados",
+      });
+    }     
+    return res.status(200).json(
+      {status: 200,
+       message: "Se ha obtenido los mov Anulados",
+       data: movimientos}
+     );
+  } catch (error) {
+    return res.status(500).json(
+      {status: 500,
+      message: "Se ha producido un ERROR al obtener los mov Anulados",
+      }
+      );
+  }
+}
+
+
+
+//--------------------------------movimientos salida-----------------------------
+
+export const createMovimientoSalida = async (req, res) => {
+  try {
+    const {
+      codigo,
+      factura,
+      fecha,
+      id_usuario,
+      cliente,
+      lista_items,
+    } = req.body;
+
+    if (!lista_items.length) {
+      return res
+        .status(ERROR_MESSAGE.NOT_FOUND)
+        .json({ message: "No se recibieron los items del movimiento entrada" });
+    }
+
+    const productsArray = [];
+    for (let item of lista_items) {
+      // Validación de operacion aceptada con el stock
+      const item_code = item.codigo_product;
+      let sql = `CALL sp_obtener_producto_por_code('${item_code}')`;
+      const pool = mysql.createPool(config_mysql)
+      const promiseQuery = promisify(pool.query).bind(pool)
+      const promisePoolEnd = promisify(pool.end).bind(pool)
+      const result = await promiseQuery(sql)
+      promisePoolEnd()
+      const Producto_item = JSON.parse(JSON.stringify(result[0][0]));
+      if (item.cantidad > Producto_item.stock) {
+        return res.status(ERROR_MESSAGE.BAD_REQUEST).json({
+          message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
+        });
+      }
+
+      console.log("old stock", Producto_item.stock);
+      const stock_new = Producto_item.stock - item.cantidad;
+      console.log("new stock", stock_new);
+      // Actualizar Colleccion Productos
+      let sql2 = `CALL sp_actualizar_stock_producto_por_codigo('${item_code}','${stock_new}')`;
+      const pool2 = mysql.createPool(config_mysql)
+      const promiseQuery2 = promisify(pool2.query).bind(pool2)
+      const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+      const result2 = await promiseQuery2(sql2)
+      promisePoolEnd2()
+      const Producto_upd = JSON.parse(JSON.stringify(result2[0][0]));
+      if (!Producto_upd) {
+        return res.status(ERROR_MESSAGE.NOT_FOUND).json({
+          message: "No se encontró al producto que se quiere añadir",
+        });
+      }
+      let sql3 = `CALL sp_obtener_producto_por_code('${item_code}')`;
+      const pool3 = mysql.createPool(config_mysql)
+      const promiseQuery3 = promisify(pool3.query).bind(pool3)
+      const promisePoolEnd3 = promisify(pool3.end).bind(pool3)
+      const result3 = await promiseQuery3(sql3)
+      promisePoolEnd3()
+      const updated_product = JSON.parse(JSON.stringify(result3[0][0]));
+
+      productsArray.push(updated_product);
+    }
+    let sql4 = `CALL sp_crear_movimiento_salida('${id_usuario}', '${codigo}', '${factura}', '${cliente}')`;
+    const pool4 = mysql.createPool(config_mysql)
+    const promiseQuery4 = promisify(pool4.query).bind(pool4)
+    const promisePoolEnd4 = promisify(pool4.end).bind(pool4)
+    const result4 = await promiseQuery4(sql4)
+    promisePoolEnd4()
+    const MovSaved = JSON.parse(JSON.stringify(result4[0][0]));
+    var a=MovSaved;
+    for (let i=0; i<lista_items.length; i++){
+      let sql5 = `CALL sp_generar_item_movimiento_salida('${a.id}', '${productsArray[i].id}', '${productsArray[i].precio}', '${lista_items[i].cantidad}')`;
+      const pool5 = mysql.createPool(config_mysql)
+      const promiseQuery5 = promisify(pool5.query).bind(pool5)
+      const promisePoolEnd5 = promisify(pool5.end).bind(pool5)
+      const result5 = await promiseQuery5(sql5)
+      promisePoolEnd5()
+      const MovSaved = JSON.parse(JSON.stringify(result5[0][0]));
+    }
+
+    return res.json({
+      status: 200,
+      movimiento: MovSaved,
+      updated_product: productsArray,
+      message: "Se ha creado el Movimiento de salida correctamente",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(ERROR_MESSAGE.INTERNAL_SERVER_ERROR).json({
+      message:
+        "Se ha generado un error al momento de crear el movimiento de salida: " + error,
+    });
+  }
+};
+
+export const getMovimientoByCodeSalida = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    let movimiento = await Movimiento.findOne({ codigo: codigo });
+    if (!movimiento) {
+      return res.json({
+        status: 404,
+        message: "No se encontró al Movimiento",
+      });
+    }
+    return res.json({
+      status: 200,
+      message: "Se ha obtenido el movimiento por codigo",
+      data: movimiento,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Se ha producido un ERROR al obtener un movimiento por codigo",
+    });
+  }
+};
+
+export const updateAnularSalida = async (req, res) => {
+  try {
+    const { _id } = req.params;
+
+    const movimiento_select = await Movimiento.findById({ _id });
+
+    if (!movimiento_select) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró al movimiento que se quiere anular",
+      });
+    }
+
+    const movementsArray = [];
+
+    //===== record
+    if (movimiento_select.lista_items) {
+      // un ITEM (los objects del array lista_items) tiene los campos:
+      //     codigo_product, name_product,description,categoria,
+      //     stock, precio, cantidad
+      if (movimiento_select.tipo == "Entrada") {
+        for (let item of movimiento_select.lista_items) {
+          const item_code = item.codigo_product;
+          // Obteniendo Producto del item
+          const Producto_item = await Producto.findOne({
+            codigo: item_code,
+          });
+          if (!Producto_item) {
+            return res.json({
+              status: 404,
+              message: "No se encontró el producto del item",
+            });
+          }
+          // Validación de operacion aceptada con el stock
+          if (item.cantidad > Producto_item.stock) {
+            return res.status(400).json({
+              status: 400,
+              message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
+            });
+          }
+
+          console.log("old stock", Producto_item.stock);
+          const stock_new = Producto_item.stock - item.cantidad;
+          console.log("new stock", stock_new);
+          // Actualizar Colleccion Productos
+          const Producto_upd = await Producto.findOneAndUpdate(
+            { codigo: item.codigo_product },
+            {
+              stock: stock_new,
+            }
+          );
+          if (!Producto_upd) {
+            return res.status(404).json({
+              status: 404,
+              message: "No se encontró al producto que se quiere actualizar",
+            });
+          }
+
+          const updated_product = await Producto.findOne({ codigo: item.codigo_product });
+
+          movementsArray.push(updated_product);
+        }
+      }
+      // Para los movimientos de Tipo Salida
+      else {
+        const lista_items = movimiento_select.lista_items;
+        await lista_items.forEach(async (item) => {
+          const item_code = item.codigo_product;
+          // Obteniendo el stock producto del item
+          const Producto_item = await Producto.findOne({
+            codigo: item_code,
+          });
+          if (!Producto_item) {
+            return res.json({
+              status: 404,
+              message: "No se encontró el producto del item",
+            });
+          }
+          console.log("old stock", Producto_item.stock);
+          const stock_new = Producto_item.stock + item.cantidad;
+          console.log("new stock", stock_new);
+          // Actualizar Colleccion Productos
+          const Producto_upd = await Producto.findOneAndUpdate(
+            { codigo: item.codigo_product },
+            {
+              stock: stock_new,
+            }
+          );
+          if (!Producto_upd) {
+            return res.status(404).json({
+              status: 404,
+              message: "No se encontró al producto que se quiere actuañizar",
+            });
+          }
+          const updated_product = await Producto.findOne({
+            codigo: item.codigo_product,
+          });
+
+          movementsArray.push(updated_product);
+        });
+      }
+    }
+    const updated_mov = await Movimiento.findOneAndUpdate(
+      { _id },
+      { estado: "Anulado" }
+    );
+    if (!updated_mov) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró al movimiento para anularlo",
+      });
+    }
+    const updated_movimiento = await Movimiento.findOne({ _id });
+    return res.status(200).json({
+      status: 200,
+      message: "Se ha anulado el movimiento",
+      data: updated_movimiento,
+      movimientos: movementsArray,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Ha aparecido un ERROR al momento de anular el movimiento",
+    });
+  }
+};
+
+export const getMovimientosAprobadosSalida = async (req, res) => {
+  try{
+    const movimientos = await Movimiento.find({estado:"Aprobado"});
+    if (!movimientos) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró a los mov Aprobados",
+      });
+    }     
+    return res.status(200).json(
+      {status: 200,
+       message: "Se ha obtenido los mov Aprobados",
+       data: movimientos}
+     );
+  } catch (error) {
+    return res.status(500).json(
+      {status: 500,
+      message: "Se ha producido un ERROR al obtener los mov Aprobados",
+      }
+      );
+  }
+}
+
+export const getMovimientosAnuladosSalida = async (req, res) => {
+  try{
+    const movimientos = await Movimiento.find({estado:"Anulado"});
+    if (!movimientos) {
+      return res.status(404).json({
+        status: 404,
+        message: "No se encontró a los mov Aprobados",
+      });
+    }     
+    return res.status(200).json(
+      {status: 200,
+       message: "Se ha obtenido los mov Anulados",
+       data: movimientos}
+     );
+  } catch (error) {
+    return res.status(500).json(
+      {status: 500,
+      message: "Se ha producido un ERROR al obtener los mov Anulados",
       }
       );
   }
