@@ -524,7 +524,15 @@ export const createMovimientoEntrada = async (req, res) => {
 export const getMovimientoByCodeEntrada = async (req, res) => {
   try {
     const { codigo } = req.params;
-    let movimiento = await Movimiento.findOne({ codigo: codigo });
+    console.log(req.params);
+    console.log(codigo);
+    let sql2 = `CALL sp_obtener_entrada_por_code('${codigo}')`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimiento = JSON.parse(JSON.stringify(result2[0]));
     if (!movimiento) {
       return res.json({
         status: 404,
@@ -537,6 +545,7 @@ export const getMovimientoByCodeEntrada = async (req, res) => {
       data: movimiento,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       status: 500,
       message: "Se ha producido un ERROR al obtener un movimiento por codigo",
@@ -674,7 +683,13 @@ export const updateAnularEntrada = async (req, res) => {
 
 export const getMovimientosAprobadosEntrada = async (req, res) => {
   try{
-    const movimientos = await Movimiento.find({estado:"Aprobado"});
+    let sql2 = `CALL sp_obtener_movimientos_entrada_aprobados()`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimientos = JSON.parse(JSON.stringify(result2[0]));
     if (!movimientos) {
       return res.status(404).json({
         status: 404,
@@ -697,7 +712,13 @@ export const getMovimientosAprobadosEntrada = async (req, res) => {
 
 export const getMovimientosAnuladosEntrada = async (req, res) => {
   try{
-    const movimientos = await Movimiento.find({estado:"Anulado"});
+    let sql2 = `CALL sp_obtener_movimientos_entrada_anulados()`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimientos = JSON.parse(JSON.stringify(result2[0]));
     if (!movimientos) {
       return res.status(404).json({
         status: 404,
@@ -818,7 +839,15 @@ export const createMovimientoSalida = async (req, res) => {
 export const getMovimientoByCodeSalida = async (req, res) => {
   try {
     const { codigo } = req.params;
-    let movimiento = await Movimiento.findOne({ codigo: codigo });
+    console.log(req.params);
+    console.log(codigo);
+    let sql2 = `CALL sp_obtener_salida_por_code('${codigo}')`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimiento = JSON.parse(JSON.stringify(result2[0]));
     if (!movimiento) {
       return res.json({
         status: 404,
@@ -968,7 +997,13 @@ export const updateAnularSalida = async (req, res) => {
 
 export const getMovimientosAprobadosSalida = async (req, res) => {
   try{
-    const movimientos = await Movimiento.find({estado:"Aprobado"});
+    let sql2 = `CALL sp_obtener_movimientos_salida_aprobados()`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimientos = JSON.parse(JSON.stringify(result2[0]));
     if (!movimientos) {
       return res.status(404).json({
         status: 404,
@@ -991,7 +1026,13 @@ export const getMovimientosAprobadosSalida = async (req, res) => {
 
 export const getMovimientosAnuladosSalida = async (req, res) => {
   try{
-    const movimientos = await Movimiento.find({estado:"Anulado"});
+    let sql2 = `CALL sp_obtener_movimientos_salida_anulados()`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimientos = JSON.parse(JSON.stringify(result2[0]));
     if (!movimientos) {
       return res.status(404).json({
         status: 404,
