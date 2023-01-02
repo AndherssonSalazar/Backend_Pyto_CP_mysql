@@ -9,22 +9,24 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 var router = (0, _express.Router)();
 // Definimos las rutas::
 
-router.post('/create', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.createMovimiento);
-router.get('/searchByCode/:codigo', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientoByCode);
-router.put('/anular_mov/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeAlmacen], movCtrl.updateAnular);
-router.get('/aprobados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAprobados);
-router.get('/anulados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAnulados);
-router.get('/reporte/:codigo' /*,[authJwt.verifyToken,authJwt.isJefeOrAlmacenero]*/, movCtrl.getReporte);
+// router.post('/create',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.createMovimiento);
+// router.get('/searchByCode/:codigo',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientoByCode);
+// router.put('/anular_mov/:_id',[authJwt.verifyToken,authJwt.isJefeAlmacen], movCtrl.updateAnular);
+// router.get('/aprobados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAprobados);
+// router.get('/anulados',[authJwt.verifyToken,authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAnulados);
+// router.get('/reporte/:codigo'/*,[authJwt.verifyToken,authJwt.isJefeOrAlmacenero]*/, movCtrl.getReporte);
 //-----------movimientos entrada-----------------------------------
 router.post('/entrada/create', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.createMovimientoEntrada);
 router.get('/entrada/searchByCode/:codigo', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientoByCodeEntrada);
-router.put('/entrada/anular_mov/:_id' /*,[authJwt.verifyToken,authJwt.isJefeAlmacen]*/, movCtrl.updateAnularEntrada);
+router.put('/entrada/anular_mov/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeAlmacen], movCtrl.updateAnularEntrada);
 router.get('/entrada/aprobados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAprobadosEntrada);
 router.get('/entrada/anulados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAnuladosEntrada);
+router.get('/entrada/items/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getItemsEntrada);
 //-----------movimientos salida-----------------------------------
 router.post('/salida/create', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.createMovimientoSalida);
 router.get('/salida/searchByCode/:codigo', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientoByCodeSalida);
-router.put('/salida/anular_mov/:_id' /*,[authJwt.verifyToken,authJwt.isJefeAlmacen]*/, movCtrl.updateAnularSalida);
+router.put('/salida/anular_mov/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeAlmacen], movCtrl.updateAnularSalida);
 router.get('/salida/aprobados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAprobadosSalida);
 router.get('/salida/anulados', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getMovimientosAnuladosSalida);
+router.get('/salida/items/:_id', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isJefeOrAlmacenero], movCtrl.getItemsSalida);
 module.exports = router;

@@ -4,7 +4,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.updateAnularSalida = exports.updateAnularEntrada = exports.updateAnular = exports.getReporte = exports.getMovimientosAprobadosSalida = exports.getMovimientosAprobadosEntrada = exports.getMovimientosAprobados = exports.getMovimientosAnuladosSalida = exports.getMovimientosAnuladosEntrada = exports.getMovimientosAnulados = exports.getMovimientoByCodeSalida = exports.getMovimientoByCodeEntrada = exports.getMovimientoByCode = exports.createMovimientoSalida = exports.createMovimientoEntrada = exports.createMovimiento = void 0;
+exports.updateAnularSalida = exports.updateAnularEntrada = exports.updateAnular = exports.getReporte = exports.getMovimientosAprobadosSalida = exports.getMovimientosAprobadosEntrada = exports.getMovimientosAprobados = exports.getMovimientosAnuladosSalida = exports.getMovimientosAnuladosEntrada = exports.getMovimientosAnulados = exports.getMovimientoByCodeSalida = exports.getMovimientoByCodeEntrada = exports.getMovimientoByCode = exports.getItemsSalida = exports.getItemsEntrada = exports.createMovimientoSalida = exports.createMovimientoEntrada = exports.createMovimiento = void 0;
 var _m_movimiento = _interopRequireDefault(require("../models/m_movimiento"));
 var _m_movimiento_entrada = _interopRequireDefault(require("../models/m_movimiento_entrada"));
 var _m_movimiento_salida = _interopRequireDefault(require("../models/m_movimiento_salida"));
@@ -842,222 +842,179 @@ var getMovimientoByCodeEntrada = /*#__PURE__*/function () {
 }();
 exports.getMovimientoByCodeEntrada = getMovimientoByCodeEntrada;
 var updateAnularEntrada = /*#__PURE__*/function () {
-  var _ref10 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee11(req, res) {
-    var _id, movimiento_select, movementsArray, _iterator5, _step5, item, item_code, Producto_item, stock_new, Producto_upd, updated_product, lista_items, updated_mov, updated_movimiento;
-    return _regeneratorRuntime().wrap(function _callee11$(_context11) {
-      while (1) switch (_context11.prev = _context11.next) {
+  var _ref10 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee10(req, res) {
+    var _id, sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimiento_select, sql3, pool3, promiseQuery3, promisePoolEnd3, result3, lista_items_mov, movementsArray, mov_var, _iterator5, _step5, item, item_id, sql4, pool4, promiseQuery4, promisePoolEnd4, result4, Producto_item, item_code, stock_new, sql5, pool5, promiseQuery5, promisePoolEnd5, result5, Producto_upd, sql6, pool6, promiseQuery6, promisePoolEnd6, result6, updated_product, sql7, pool7, promiseQuery7, promisePoolEnd7, result7, updated_mov;
+    return _regeneratorRuntime().wrap(function _callee10$(_context10) {
+      while (1) switch (_context10.prev = _context10.next) {
         case 0:
-          _context11.prev = 0;
+          _context10.prev = 0;
           _id = req.params._id;
-          _context11.next = 4;
-          return _m_movimiento["default"].findById({
-            _id: _id
-          });
-        case 4:
-          movimiento_select = _context11.sent;
+          sql2 = "CALL sp_obtener_entrada_por_id('".concat(_id, "')");
+          pool2 = mysql.createPool(config_mysql);
+          promiseQuery2 = promisify(pool2.query).bind(pool2);
+          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
+          _context10.next = 8;
+          return promiseQuery2(sql2);
+        case 8:
+          result2 = _context10.sent;
+          promisePoolEnd2();
+          movimiento_select = JSON.parse(JSON.stringify(result2[0][0]));
           if (movimiento_select) {
-            _context11.next = 7;
+            _context10.next = 13;
             break;
           }
-          return _context11.abrupt("return", res.status(404).json({
+          return _context10.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al movimiento que se quiere anular"
           }));
-        case 7:
-          movementsArray = []; //===== record
-          if (!movimiento_select.lista_items) {
-            _context11.next = 50;
-            break;
-          }
-          if (!(movimiento_select.tipo == "Entrada")) {
-            _context11.next = 47;
-            break;
-          }
-          _iterator5 = _createForOfIteratorHelper(movimiento_select.lista_items);
-          _context11.prev = 11;
-          _iterator5.s();
         case 13:
+          sql3 = "CALL sp_obtener_productos_movimiento_entrada('".concat(movimiento_select.id, "')");
+          pool3 = mysql.createPool(config_mysql);
+          promiseQuery3 = promisify(pool3.query).bind(pool3);
+          promisePoolEnd3 = promisify(pool3.end).bind(pool3);
+          _context10.next = 19;
+          return promiseQuery3(sql3);
+        case 19:
+          result3 = _context10.sent;
+          promisePoolEnd3();
+          lista_items_mov = JSON.parse(JSON.stringify(result3[0]));
+          movementsArray = []; //===== record
+          mov_var = movimiento_select;
+          if (!(lista_items_mov != null)) {
+            _context10.next = 81;
+            break;
+          }
+          // un ITEM (los objects del array lista_items) tiene los campos:
+          //     codigo_product, name_product,description,categoria,
+          //     stock, precio, cantidad
+          _iterator5 = _createForOfIteratorHelper(lista_items_mov);
+          _context10.prev = 26;
+          _iterator5.s();
+        case 28:
           if ((_step5 = _iterator5.n()).done) {
-            _context11.next = 37;
+            _context10.next = 73;
             break;
           }
           item = _step5.value;
-          item_code = item.codigo_product; // Obteniendo Producto del item
-          _context11.next = 18;
-          return _m_producto["default"].findOne({
-            codigo: item_code
-          });
-        case 18:
-          Producto_item = _context11.sent;
+          item_id = item.id_producto; // Obteniendo Producto del item
+          console.log(item_id);
+          sql4 = "CALL sp_obtener_producto_por_id('".concat(item_id, "')");
+          pool4 = mysql.createPool(config_mysql);
+          promiseQuery4 = promisify(pool4.query).bind(pool4);
+          promisePoolEnd4 = promisify(pool4.end).bind(pool4);
+          _context10.next = 38;
+          return promiseQuery4(sql4);
+        case 38:
+          result4 = _context10.sent;
+          promisePoolEnd4();
+          Producto_item = JSON.parse(JSON.stringify(result4[0][0]));
+          console.log(Producto_item);
+          item_code = Producto_item.codigo;
           if (Producto_item) {
-            _context11.next = 21;
+            _context10.next = 45;
             break;
           }
-          return _context11.abrupt("return", res.json({
+          return _context10.abrupt("return", res.json({
             status: 404,
             message: "No se encontró el producto del item"
           }));
-        case 21:
+        case 45:
           if (!(item.cantidad > Producto_item.stock)) {
-            _context11.next = 23;
+            _context10.next = 47;
             break;
           }
-          return _context11.abrupt("return", res.status(400).json({
+          return _context10.abrupt("return", res.status(400).json({
             status: 400,
             message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE"
           }));
-        case 23:
+        case 47:
           console.log("old stock", Producto_item.stock);
           stock_new = Producto_item.stock - item.cantidad;
           console.log("new stock", stock_new);
           // Actualizar Colleccion Productos
-          _context11.next = 28;
-          return _m_producto["default"].findOneAndUpdate({
-            codigo: item.codigo_product
-          }, {
-            stock: stock_new
-          });
-        case 28:
-          Producto_upd = _context11.sent;
+          sql5 = "CALL sp_actualizar_stock_producto_por_codigo('".concat(item_code, "','").concat(stock_new, "')");
+          pool5 = mysql.createPool(config_mysql);
+          promiseQuery5 = promisify(pool5.query).bind(pool5);
+          promisePoolEnd5 = promisify(pool5.end).bind(pool5);
+          _context10.next = 56;
+          return promiseQuery5(sql5);
+        case 56:
+          result5 = _context10.sent;
+          promisePoolEnd5();
+          Producto_upd = JSON.parse(JSON.stringify(result5[0][0]));
           if (Producto_upd) {
-            _context11.next = 31;
+            _context10.next = 61;
             break;
           }
-          return _context11.abrupt("return", res.status(404).json({
+          return _context10.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al producto que se quiere actualizar"
           }));
-        case 31:
-          _context11.next = 33;
-          return _m_producto["default"].findOne({
-            codigo: item.codigo_product
-          });
-        case 33:
-          updated_product = _context11.sent;
+        case 61:
+          sql6 = "CALL sp_obtener_producto_por_code('".concat(item_code, "')");
+          pool6 = mysql.createPool(config_mysql);
+          promiseQuery6 = promisify(pool6.query).bind(pool6);
+          promisePoolEnd6 = promisify(pool6.end).bind(pool6);
+          _context10.next = 67;
+          return promiseQuery6(sql6);
+        case 67:
+          result6 = _context10.sent;
+          promisePoolEnd6();
+          updated_product = JSON.parse(JSON.stringify(result6[0][0]));
           movementsArray.push(updated_product);
-        case 35:
-          _context11.next = 13;
+        case 71:
+          _context10.next = 28;
           break;
-        case 37:
-          _context11.next = 42;
+        case 73:
+          _context10.next = 78;
           break;
-        case 39:
-          _context11.prev = 39;
-          _context11.t0 = _context11["catch"](11);
-          _iterator5.e(_context11.t0);
-        case 42:
-          _context11.prev = 42;
+        case 75:
+          _context10.prev = 75;
+          _context10.t0 = _context10["catch"](26);
+          _iterator5.e(_context10.t0);
+        case 78:
+          _context10.prev = 78;
           _iterator5.f();
-          return _context11.finish(42);
-        case 45:
-          _context11.next = 50;
-          break;
-        case 47:
-          lista_items = movimiento_select.lista_items;
-          _context11.next = 50;
-          return lista_items.forEach( /*#__PURE__*/function () {
-            var _ref11 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee10(item) {
-              var item_code, Producto_item, stock_new, Producto_upd, updated_product;
-              return _regeneratorRuntime().wrap(function _callee10$(_context10) {
-                while (1) switch (_context10.prev = _context10.next) {
-                  case 0:
-                    item_code = item.codigo_product; // Obteniendo el stock producto del item
-                    _context10.next = 3;
-                    return _m_producto["default"].findOne({
-                      codigo: item_code
-                    });
-                  case 3:
-                    Producto_item = _context10.sent;
-                    if (Producto_item) {
-                      _context10.next = 6;
-                      break;
-                    }
-                    return _context10.abrupt("return", res.json({
-                      status: 404,
-                      message: "No se encontró el producto del item"
-                    }));
-                  case 6:
-                    console.log("old stock", Producto_item.stock);
-                    stock_new = Producto_item.stock + item.cantidad;
-                    console.log("new stock", stock_new);
-                    // Actualizar Colleccion Productos
-                    _context10.next = 11;
-                    return _m_producto["default"].findOneAndUpdate({
-                      codigo: item.codigo_product
-                    }, {
-                      stock: stock_new
-                    });
-                  case 11:
-                    Producto_upd = _context10.sent;
-                    if (Producto_upd) {
-                      _context10.next = 14;
-                      break;
-                    }
-                    return _context10.abrupt("return", res.status(404).json({
-                      status: 404,
-                      message: "No se encontró al producto que se quiere actuañizar"
-                    }));
-                  case 14:
-                    _context10.next = 16;
-                    return _m_producto["default"].findOne({
-                      codigo: item.codigo_product
-                    });
-                  case 16:
-                    updated_product = _context10.sent;
-                    movementsArray.push(updated_product);
-                  case 18:
-                  case "end":
-                    return _context10.stop();
-                }
-              }, _callee10);
-            }));
-            return function (_x20) {
-              return _ref11.apply(this, arguments);
-            };
-          }());
-        case 50:
-          _context11.next = 52;
-          return _m_movimiento["default"].findOneAndUpdate({
-            _id: _id
-          }, {
-            estado: "Anulado"
-          });
-        case 52:
-          updated_mov = _context11.sent;
+          return _context10.finish(78);
+        case 81:
+          sql7 = "CALL sp_anular_movimiento_entrada('".concat(movimiento_select.id, "')");
+          pool7 = mysql.createPool(config_mysql);
+          promiseQuery7 = promisify(pool7.query).bind(pool7);
+          promisePoolEnd7 = promisify(pool7.end).bind(pool7);
+          _context10.next = 87;
+          return promiseQuery7(sql7);
+        case 87:
+          result7 = _context10.sent;
+          promisePoolEnd7();
+          updated_mov = JSON.parse(JSON.stringify(result7[0][0]));
           if (updated_mov) {
-            _context11.next = 55;
+            _context10.next = 92;
             break;
           }
-          return _context11.abrupt("return", res.status(404).json({
+          return _context10.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al movimiento para anularlo"
           }));
-        case 55:
-          _context11.next = 57;
-          return _m_movimiento["default"].findOne({
-            _id: _id
-          });
-        case 57:
-          updated_movimiento = _context11.sent;
-          return _context11.abrupt("return", res.status(200).json({
+        case 92:
+          return _context10.abrupt("return", res.status(200).json({
             status: 200,
             message: "Se ha anulado el movimiento",
-            data: updated_movimiento,
+            data: updated_mov,
             movimientos: movementsArray
           }));
-        case 61:
-          _context11.prev = 61;
-          _context11.t1 = _context11["catch"](0);
-          console.log(_context11.t1);
-          return _context11.abrupt("return", res.status(500).json({
+        case 95:
+          _context10.prev = 95;
+          _context10.t1 = _context10["catch"](0);
+          console.log(_context10.t1);
+          return _context10.abrupt("return", res.status(500).json({
             status: 500,
             message: "Ha aparecido un ERROR al momento de anular el movimiento"
           }));
-        case 65:
+        case 99:
         case "end":
-          return _context11.stop();
+          return _context10.stop();
       }
-    }, _callee11, null, [[0, 61], [11, 39, 42, 45]]);
+    }, _callee10, null, [[0, 95], [26, 75, 78, 81]]);
   }));
   return function updateAnularEntrada(_x18, _x19) {
     return _ref10.apply(this, arguments);
@@ -1065,13 +1022,62 @@ var updateAnularEntrada = /*#__PURE__*/function () {
 }();
 exports.updateAnularEntrada = updateAnularEntrada;
 var getMovimientosAprobadosEntrada = /*#__PURE__*/function () {
+  var _ref11 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee11(req, res) {
+    var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
+    return _regeneratorRuntime().wrap(function _callee11$(_context11) {
+      while (1) switch (_context11.prev = _context11.next) {
+        case 0:
+          _context11.prev = 0;
+          sql2 = "CALL sp_obtener_movimientos_entrada_aprobados()";
+          pool2 = mysql.createPool(config_mysql);
+          promiseQuery2 = promisify(pool2.query).bind(pool2);
+          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
+          _context11.next = 7;
+          return promiseQuery2(sql2);
+        case 7:
+          result2 = _context11.sent;
+          promisePoolEnd2();
+          movimientos = JSON.parse(JSON.stringify(result2[0]));
+          if (movimientos) {
+            _context11.next = 12;
+            break;
+          }
+          return _context11.abrupt("return", res.status(404).json({
+            status: 404,
+            message: "No se encontró a los mov Aprobados"
+          }));
+        case 12:
+          return _context11.abrupt("return", res.status(200).json({
+            status: 200,
+            message: "Se ha obtenido los mov Aprobados",
+            data: movimientos
+          }));
+        case 15:
+          _context11.prev = 15;
+          _context11.t0 = _context11["catch"](0);
+          return _context11.abrupt("return", res.status(500).json({
+            status: 500,
+            message: "Se ha producido un ERROR al obtener los mov Aprobados"
+          }));
+        case 18:
+        case "end":
+          return _context11.stop();
+      }
+    }, _callee11, null, [[0, 15]]);
+  }));
+  return function getMovimientosAprobadosEntrada(_x20, _x21) {
+    return _ref11.apply(this, arguments);
+  };
+}();
+exports.getMovimientosAprobadosEntrada = getMovimientosAprobadosEntrada;
+var getMovimientosAnuladosEntrada = /*#__PURE__*/function () {
   var _ref12 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee12(req, res) {
     var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
     return _regeneratorRuntime().wrap(function _callee12$(_context12) {
       while (1) switch (_context12.prev = _context12.next) {
         case 0:
           _context12.prev = 0;
-          sql2 = "CALL sp_obtener_movimientos_entrada_aprobados()";
+          sql2 = "CALL sp_obtener_movimientos_entrada_anulados()";
           pool2 = mysql.createPool(config_mysql);
           promiseQuery2 = promisify(pool2.query).bind(pool2);
           promisePoolEnd2 = promisify(pool2.end).bind(pool2);
@@ -1092,7 +1098,7 @@ var getMovimientosAprobadosEntrada = /*#__PURE__*/function () {
         case 12:
           return _context12.abrupt("return", res.status(200).json({
             status: 200,
-            message: "Se ha obtenido los mov Aprobados",
+            message: "Se ha obtenido los mov Anulados",
             data: movimientos
           }));
         case 15:
@@ -1100,7 +1106,7 @@ var getMovimientosAprobadosEntrada = /*#__PURE__*/function () {
           _context12.t0 = _context12["catch"](0);
           return _context12.abrupt("return", res.status(500).json({
             status: 500,
-            message: "Se ha producido un ERROR al obtener los mov Aprobados"
+            message: "Se ha producido un ERROR al obtener los mov Anulados"
           }));
         case 18:
         case "end":
@@ -1108,62 +1114,55 @@ var getMovimientosAprobadosEntrada = /*#__PURE__*/function () {
       }
     }, _callee12, null, [[0, 15]]);
   }));
-  return function getMovimientosAprobadosEntrada(_x21, _x22) {
+  return function getMovimientosAnuladosEntrada(_x22, _x23) {
     return _ref12.apply(this, arguments);
   };
 }();
-exports.getMovimientosAprobadosEntrada = getMovimientosAprobadosEntrada;
-var getMovimientosAnuladosEntrada = /*#__PURE__*/function () {
+exports.getMovimientosAnuladosEntrada = getMovimientosAnuladosEntrada;
+var getItemsEntrada = /*#__PURE__*/function () {
   var _ref13 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee13(req, res) {
-    var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
+    var _id, sql, pool, promiseQuery, promisePoolEnd, result, categorias;
     return _regeneratorRuntime().wrap(function _callee13$(_context13) {
       while (1) switch (_context13.prev = _context13.next) {
         case 0:
           _context13.prev = 0;
-          sql2 = "CALL sp_obtener_movimientos_entrada_anulados()";
-          pool2 = mysql.createPool(config_mysql);
-          promiseQuery2 = promisify(pool2.query).bind(pool2);
-          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
-          _context13.next = 7;
-          return promiseQuery2(sql2);
-        case 7:
-          result2 = _context13.sent;
-          promisePoolEnd2();
-          movimientos = JSON.parse(JSON.stringify(result2[0]));
-          if (movimientos) {
-            _context13.next = 12;
-            break;
-          }
-          return _context13.abrupt("return", res.status(404).json({
-            status: 404,
-            message: "No se encontró a los mov Aprobados"
-          }));
-        case 12:
-          return _context13.abrupt("return", res.status(200).json({
+          _id = req.params._id;
+          sql = "CALL sp_obtener_productos_movimiento_entrada('".concat(_id, "')");
+          pool = mysql.createPool(config_mysql);
+          promiseQuery = promisify(pool.query).bind(pool);
+          promisePoolEnd = promisify(pool.end).bind(pool);
+          _context13.next = 8;
+          return promiseQuery(sql);
+        case 8:
+          result = _context13.sent;
+          promisePoolEnd();
+          categorias = Object.values(JSON.parse(JSON.stringify(result[0])));
+          return _context13.abrupt("return", res.json({
             status: 200,
-            message: "Se ha obtenido los mov Anulados",
-            data: movimientos
+            message: "Se ha obtenido las items del movimiento de entrada",
+            data: categorias
           }));
-        case 15:
-          _context13.prev = 15;
+        case 14:
+          _context13.prev = 14;
           _context13.t0 = _context13["catch"](0);
-          return _context13.abrupt("return", res.status(500).json({
+          console.log(_context13.t0);
+          return _context13.abrupt("return", res.json({
             status: 500,
-            message: "Se ha producido un ERROR al obtener los mov Anulados"
+            message: "Se ha producido un ERROR al obtener los items del movimiento de entrada"
           }));
         case 18:
         case "end":
           return _context13.stop();
       }
-    }, _callee13, null, [[0, 15]]);
+    }, _callee13, null, [[0, 14]]);
   }));
-  return function getMovimientosAnuladosEntrada(_x23, _x24) {
+  return function getItemsEntrada(_x24, _x25) {
     return _ref13.apply(this, arguments);
   };
 }();
 
 //--------------------------------movimientos salida-----------------------------
-exports.getMovimientosAnuladosEntrada = getMovimientosAnuladosEntrada;
+exports.getItemsEntrada = getItemsEntrada;
 var createMovimientoSalida = /*#__PURE__*/function () {
   var _ref14 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee14(req, res) {
     var _req$body3, codigo, factura, fecha, id_usuario, cliente, lista_items, productsArray, _iterator6, _step6, item, item_code, sql, pool, promiseQuery, promisePoolEnd, result, Producto_item, stock_new, sql2, pool2, promiseQuery2, promisePoolEnd2, result2, Producto_upd, sql3, pool3, promiseQuery3, promisePoolEnd3, result3, updated_product, sql4, pool4, promiseQuery4, promisePoolEnd4, result4, MovSaved, a, i, sql5, pool5, promiseQuery5, promisePoolEnd5, result5, _MovSaved2;
@@ -1309,7 +1308,7 @@ var createMovimientoSalida = /*#__PURE__*/function () {
       }
     }, _callee14, null, [[0, 83], [6, 50, 53, 56]]);
   }));
-  return function createMovimientoSalida(_x25, _x26) {
+  return function createMovimientoSalida(_x26, _x27) {
     return _ref14.apply(this, arguments);
   };
 }();
@@ -1361,242 +1360,247 @@ var getMovimientoByCodeSalida = /*#__PURE__*/function () {
       }
     }, _callee15, null, [[0, 18]]);
   }));
-  return function getMovimientoByCodeSalida(_x27, _x28) {
+  return function getMovimientoByCodeSalida(_x28, _x29) {
     return _ref15.apply(this, arguments);
   };
 }();
 exports.getMovimientoByCodeSalida = getMovimientoByCodeSalida;
 var updateAnularSalida = /*#__PURE__*/function () {
-  var _ref16 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee17(req, res) {
-    var _id, movimiento_select, movementsArray, _iterator7, _step7, item, item_code, Producto_item, stock_new, Producto_upd, updated_product, lista_items, updated_mov, updated_movimiento;
-    return _regeneratorRuntime().wrap(function _callee17$(_context17) {
-      while (1) switch (_context17.prev = _context17.next) {
+  var _ref16 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee16(req, res) {
+    var _id, sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimiento_select, sql3, pool3, promiseQuery3, promisePoolEnd3, result3, lista_items_mov, movementsArray, mov_var, _iterator7, _step7, item, item_id, sql4, pool4, promiseQuery4, promisePoolEnd4, result4, Producto_item, item_code, stock_new, sql5, pool5, promiseQuery5, promisePoolEnd5, result5, Producto_upd, sql6, pool6, promiseQuery6, promisePoolEnd6, result6, updated_product, sql7, pool7, promiseQuery7, promisePoolEnd7, result7, updated_mov;
+    return _regeneratorRuntime().wrap(function _callee16$(_context16) {
+      while (1) switch (_context16.prev = _context16.next) {
         case 0:
-          _context17.prev = 0;
+          _context16.prev = 0;
           _id = req.params._id;
-          _context17.next = 4;
-          return _m_movimiento["default"].findById({
-            _id: _id
-          });
-        case 4:
-          movimiento_select = _context17.sent;
+          sql2 = "CALL sp_obtener_salida_por_id('".concat(_id, "')");
+          pool2 = mysql.createPool(config_mysql);
+          promiseQuery2 = promisify(pool2.query).bind(pool2);
+          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
+          _context16.next = 8;
+          return promiseQuery2(sql2);
+        case 8:
+          result2 = _context16.sent;
+          promisePoolEnd2();
+          movimiento_select = JSON.parse(JSON.stringify(result2[0][0]));
           if (movimiento_select) {
-            _context17.next = 7;
+            _context16.next = 13;
             break;
           }
-          return _context17.abrupt("return", res.status(404).json({
+          return _context16.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al movimiento que se quiere anular"
           }));
-        case 7:
-          movementsArray = []; //===== record
-          if (!movimiento_select.lista_items) {
-            _context17.next = 50;
-            break;
-          }
-          if (!(movimiento_select.tipo == "Entrada")) {
-            _context17.next = 47;
-            break;
-          }
-          _iterator7 = _createForOfIteratorHelper(movimiento_select.lista_items);
-          _context17.prev = 11;
-          _iterator7.s();
         case 13:
+          sql3 = "CALL sp_obtener_productos_movimiento_salida('".concat(movimiento_select.id, "')");
+          pool3 = mysql.createPool(config_mysql);
+          promiseQuery3 = promisify(pool3.query).bind(pool3);
+          promisePoolEnd3 = promisify(pool3.end).bind(pool3);
+          _context16.next = 19;
+          return promiseQuery3(sql3);
+        case 19:
+          result3 = _context16.sent;
+          promisePoolEnd3();
+          lista_items_mov = JSON.parse(JSON.stringify(result3[0]));
+          movementsArray = []; //===== record
+          mov_var = movimiento_select;
+          if (!(lista_items_mov != null)) {
+            _context16.next = 80;
+            break;
+          }
+          // un ITEM (los objects del array lista_items) tiene los campos:
+          //     codigo_product, name_product,description,categoria,
+          //     stock, precio, cantidad
+          _iterator7 = _createForOfIteratorHelper(lista_items_mov);
+          _context16.prev = 26;
+          _iterator7.s();
+        case 28:
           if ((_step7 = _iterator7.n()).done) {
-            _context17.next = 37;
+            _context16.next = 72;
             break;
           }
           item = _step7.value;
-          item_code = item.codigo_product; // Obteniendo Producto del item
-          _context17.next = 18;
-          return _m_producto["default"].findOne({
-            codigo: item_code
-          });
-        case 18:
-          Producto_item = _context17.sent;
+          item_id = item.id_producto; // Obteniendo Producto del item
+          sql4 = "CALL sp_obtener_producto_por_id('".concat(item_id, "')");
+          pool4 = mysql.createPool(config_mysql);
+          promiseQuery4 = promisify(pool4.query).bind(pool4);
+          promisePoolEnd4 = promisify(pool4.end).bind(pool4);
+          _context16.next = 37;
+          return promiseQuery4(sql4);
+        case 37:
+          result4 = _context16.sent;
+          promisePoolEnd4();
+          Producto_item = JSON.parse(JSON.stringify(result4[0][0]));
+          console.log(Producto_item);
+          item_code = Producto_item.codigo;
           if (Producto_item) {
-            _context17.next = 21;
+            _context16.next = 44;
             break;
           }
-          return _context17.abrupt("return", res.json({
+          return _context16.abrupt("return", res.json({
             status: 404,
             message: "No se encontró el producto del item"
           }));
-        case 21:
+        case 44:
           if (!(item.cantidad > Producto_item.stock)) {
-            _context17.next = 23;
+            _context16.next = 46;
             break;
           }
-          return _context17.abrupt("return", res.status(400).json({
+          return _context16.abrupt("return", res.status(400).json({
             status: 400,
             message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE"
           }));
-        case 23:
+        case 46:
           console.log("old stock", Producto_item.stock);
-          stock_new = Producto_item.stock - item.cantidad;
+          stock_new = Producto_item.stock + item.cantidad;
           console.log("new stock", stock_new);
           // Actualizar Colleccion Productos
-          _context17.next = 28;
-          return _m_producto["default"].findOneAndUpdate({
-            codigo: item.codigo_product
-          }, {
-            stock: stock_new
-          });
-        case 28:
-          Producto_upd = _context17.sent;
+          sql5 = "CALL sp_actualizar_stock_producto_por_codigo('".concat(item_code, "','").concat(stock_new, "')");
+          pool5 = mysql.createPool(config_mysql);
+          promiseQuery5 = promisify(pool5.query).bind(pool5);
+          promisePoolEnd5 = promisify(pool5.end).bind(pool5);
+          _context16.next = 55;
+          return promiseQuery5(sql5);
+        case 55:
+          result5 = _context16.sent;
+          promisePoolEnd5();
+          Producto_upd = JSON.parse(JSON.stringify(result5[0][0]));
           if (Producto_upd) {
-            _context17.next = 31;
+            _context16.next = 60;
             break;
           }
-          return _context17.abrupt("return", res.status(404).json({
+          return _context16.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al producto que se quiere actualizar"
           }));
-        case 31:
-          _context17.next = 33;
-          return _m_producto["default"].findOne({
-            codigo: item.codigo_product
-          });
-        case 33:
-          updated_product = _context17.sent;
+        case 60:
+          sql6 = "CALL sp_obtener_producto_por_code('".concat(item_code, "')");
+          pool6 = mysql.createPool(config_mysql);
+          promiseQuery6 = promisify(pool6.query).bind(pool6);
+          promisePoolEnd6 = promisify(pool6.end).bind(pool6);
+          _context16.next = 66;
+          return promiseQuery6(sql6);
+        case 66:
+          result6 = _context16.sent;
+          promisePoolEnd6();
+          updated_product = JSON.parse(JSON.stringify(result6[0][0]));
           movementsArray.push(updated_product);
-        case 35:
-          _context17.next = 13;
+        case 70:
+          _context16.next = 28;
           break;
-        case 37:
-          _context17.next = 42;
+        case 72:
+          _context16.next = 77;
           break;
-        case 39:
-          _context17.prev = 39;
-          _context17.t0 = _context17["catch"](11);
-          _iterator7.e(_context17.t0);
-        case 42:
-          _context17.prev = 42;
+        case 74:
+          _context16.prev = 74;
+          _context16.t0 = _context16["catch"](26);
+          _iterator7.e(_context16.t0);
+        case 77:
+          _context16.prev = 77;
           _iterator7.f();
-          return _context17.finish(42);
-        case 45:
-          _context17.next = 50;
-          break;
-        case 47:
-          lista_items = movimiento_select.lista_items;
-          _context17.next = 50;
-          return lista_items.forEach( /*#__PURE__*/function () {
-            var _ref17 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee16(item) {
-              var item_code, Producto_item, stock_new, Producto_upd, updated_product;
-              return _regeneratorRuntime().wrap(function _callee16$(_context16) {
-                while (1) switch (_context16.prev = _context16.next) {
-                  case 0:
-                    item_code = item.codigo_product; // Obteniendo el stock producto del item
-                    _context16.next = 3;
-                    return _m_producto["default"].findOne({
-                      codigo: item_code
-                    });
-                  case 3:
-                    Producto_item = _context16.sent;
-                    if (Producto_item) {
-                      _context16.next = 6;
-                      break;
-                    }
-                    return _context16.abrupt("return", res.json({
-                      status: 404,
-                      message: "No se encontró el producto del item"
-                    }));
-                  case 6:
-                    console.log("old stock", Producto_item.stock);
-                    stock_new = Producto_item.stock + item.cantidad;
-                    console.log("new stock", stock_new);
-                    // Actualizar Colleccion Productos
-                    _context16.next = 11;
-                    return _m_producto["default"].findOneAndUpdate({
-                      codigo: item.codigo_product
-                    }, {
-                      stock: stock_new
-                    });
-                  case 11:
-                    Producto_upd = _context16.sent;
-                    if (Producto_upd) {
-                      _context16.next = 14;
-                      break;
-                    }
-                    return _context16.abrupt("return", res.status(404).json({
-                      status: 404,
-                      message: "No se encontró al producto que se quiere actuañizar"
-                    }));
-                  case 14:
-                    _context16.next = 16;
-                    return _m_producto["default"].findOne({
-                      codigo: item.codigo_product
-                    });
-                  case 16:
-                    updated_product = _context16.sent;
-                    movementsArray.push(updated_product);
-                  case 18:
-                  case "end":
-                    return _context16.stop();
-                }
-              }, _callee16);
-            }));
-            return function (_x31) {
-              return _ref17.apply(this, arguments);
-            };
-          }());
-        case 50:
-          _context17.next = 52;
-          return _m_movimiento["default"].findOneAndUpdate({
-            _id: _id
-          }, {
-            estado: "Anulado"
-          });
-        case 52:
-          updated_mov = _context17.sent;
+          return _context16.finish(77);
+        case 80:
+          sql7 = "CALL sp_anular_movimiento_salida('".concat(movimiento_select.id, "')");
+          pool7 = mysql.createPool(config_mysql);
+          promiseQuery7 = promisify(pool7.query).bind(pool7);
+          promisePoolEnd7 = promisify(pool7.end).bind(pool7);
+          _context16.next = 86;
+          return promiseQuery7(sql7);
+        case 86:
+          result7 = _context16.sent;
+          promisePoolEnd7();
+          updated_mov = JSON.parse(JSON.stringify(result7[0][0]));
           if (updated_mov) {
-            _context17.next = 55;
+            _context16.next = 91;
             break;
           }
-          return _context17.abrupt("return", res.status(404).json({
+          return _context16.abrupt("return", res.status(404).json({
             status: 404,
             message: "No se encontró al movimiento para anularlo"
           }));
-        case 55:
-          _context17.next = 57;
-          return _m_movimiento["default"].findOne({
-            _id: _id
-          });
-        case 57:
-          updated_movimiento = _context17.sent;
-          return _context17.abrupt("return", res.status(200).json({
+        case 91:
+          return _context16.abrupt("return", res.status(200).json({
             status: 200,
             message: "Se ha anulado el movimiento",
-            data: updated_movimiento,
+            data: updated_mov,
             movimientos: movementsArray
           }));
-        case 61:
-          _context17.prev = 61;
-          _context17.t1 = _context17["catch"](0);
-          console.log(_context17.t1);
-          return _context17.abrupt("return", res.status(500).json({
+        case 94:
+          _context16.prev = 94;
+          _context16.t1 = _context16["catch"](0);
+          console.log(_context16.t1);
+          return _context16.abrupt("return", res.status(500).json({
             status: 500,
             message: "Ha aparecido un ERROR al momento de anular el movimiento"
           }));
-        case 65:
+        case 98:
         case "end":
-          return _context17.stop();
+          return _context16.stop();
       }
-    }, _callee17, null, [[0, 61], [11, 39, 42, 45]]);
+    }, _callee16, null, [[0, 94], [26, 74, 77, 80]]);
   }));
-  return function updateAnularSalida(_x29, _x30) {
+  return function updateAnularSalida(_x30, _x31) {
     return _ref16.apply(this, arguments);
   };
 }();
 exports.updateAnularSalida = updateAnularSalida;
 var getMovimientosAprobadosSalida = /*#__PURE__*/function () {
+  var _ref17 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee17(req, res) {
+    var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
+    return _regeneratorRuntime().wrap(function _callee17$(_context17) {
+      while (1) switch (_context17.prev = _context17.next) {
+        case 0:
+          _context17.prev = 0;
+          sql2 = "CALL sp_obtener_movimientos_salida_aprobados()";
+          pool2 = mysql.createPool(config_mysql);
+          promiseQuery2 = promisify(pool2.query).bind(pool2);
+          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
+          _context17.next = 7;
+          return promiseQuery2(sql2);
+        case 7:
+          result2 = _context17.sent;
+          promisePoolEnd2();
+          movimientos = JSON.parse(JSON.stringify(result2[0]));
+          if (movimientos) {
+            _context17.next = 12;
+            break;
+          }
+          return _context17.abrupt("return", res.status(404).json({
+            status: 404,
+            message: "No se encontró a los mov Aprobados"
+          }));
+        case 12:
+          return _context17.abrupt("return", res.status(200).json({
+            status: 200,
+            message: "Se ha obtenido los mov Aprobados",
+            data: movimientos
+          }));
+        case 15:
+          _context17.prev = 15;
+          _context17.t0 = _context17["catch"](0);
+          return _context17.abrupt("return", res.status(500).json({
+            status: 500,
+            message: "Se ha producido un ERROR al obtener los mov Aprobados"
+          }));
+        case 18:
+        case "end":
+          return _context17.stop();
+      }
+    }, _callee17, null, [[0, 15]]);
+  }));
+  return function getMovimientosAprobadosSalida(_x32, _x33) {
+    return _ref17.apply(this, arguments);
+  };
+}();
+exports.getMovimientosAprobadosSalida = getMovimientosAprobadosSalida;
+var getMovimientosAnuladosSalida = /*#__PURE__*/function () {
   var _ref18 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee18(req, res) {
     var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
     return _regeneratorRuntime().wrap(function _callee18$(_context18) {
       while (1) switch (_context18.prev = _context18.next) {
         case 0:
           _context18.prev = 0;
-          sql2 = "CALL sp_obtener_movimientos_salida_aprobados()";
+          sql2 = "CALL sp_obtener_movimientos_salida_anulados()";
           pool2 = mysql.createPool(config_mysql);
           promiseQuery2 = promisify(pool2.query).bind(pool2);
           promisePoolEnd2 = promisify(pool2.end).bind(pool2);
@@ -1617,7 +1621,7 @@ var getMovimientosAprobadosSalida = /*#__PURE__*/function () {
         case 12:
           return _context18.abrupt("return", res.status(200).json({
             status: 200,
-            message: "Se ha obtenido los mov Aprobados",
+            message: "Se ha obtenido los mov Anulados",
             data: movimientos
           }));
         case 15:
@@ -1625,7 +1629,7 @@ var getMovimientosAprobadosSalida = /*#__PURE__*/function () {
           _context18.t0 = _context18["catch"](0);
           return _context18.abrupt("return", res.status(500).json({
             status: 500,
-            message: "Se ha producido un ERROR al obtener los mov Aprobados"
+            message: "Se ha producido un ERROR al obtener los mov Anulados"
           }));
         case 18:
         case "end":
@@ -1633,57 +1637,50 @@ var getMovimientosAprobadosSalida = /*#__PURE__*/function () {
       }
     }, _callee18, null, [[0, 15]]);
   }));
-  return function getMovimientosAprobadosSalida(_x32, _x33) {
+  return function getMovimientosAnuladosSalida(_x34, _x35) {
     return _ref18.apply(this, arguments);
   };
 }();
-exports.getMovimientosAprobadosSalida = getMovimientosAprobadosSalida;
-var getMovimientosAnuladosSalida = /*#__PURE__*/function () {
+exports.getMovimientosAnuladosSalida = getMovimientosAnuladosSalida;
+var getItemsSalida = /*#__PURE__*/function () {
   var _ref19 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee19(req, res) {
-    var sql2, pool2, promiseQuery2, promisePoolEnd2, result2, movimientos;
+    var _id, sql, pool, promiseQuery, promisePoolEnd, result, categorias;
     return _regeneratorRuntime().wrap(function _callee19$(_context19) {
       while (1) switch (_context19.prev = _context19.next) {
         case 0:
           _context19.prev = 0;
-          sql2 = "CALL sp_obtener_movimientos_salida_anulados()";
-          pool2 = mysql.createPool(config_mysql);
-          promiseQuery2 = promisify(pool2.query).bind(pool2);
-          promisePoolEnd2 = promisify(pool2.end).bind(pool2);
-          _context19.next = 7;
-          return promiseQuery2(sql2);
-        case 7:
-          result2 = _context19.sent;
-          promisePoolEnd2();
-          movimientos = JSON.parse(JSON.stringify(result2[0]));
-          if (movimientos) {
-            _context19.next = 12;
-            break;
-          }
-          return _context19.abrupt("return", res.status(404).json({
-            status: 404,
-            message: "No se encontró a los mov Aprobados"
-          }));
-        case 12:
-          return _context19.abrupt("return", res.status(200).json({
+          _id = req.params._id;
+          sql = "CALL sp_obtener_productos_movimiento_salida('".concat(_id, "')");
+          pool = mysql.createPool(config_mysql);
+          promiseQuery = promisify(pool.query).bind(pool);
+          promisePoolEnd = promisify(pool.end).bind(pool);
+          _context19.next = 8;
+          return promiseQuery(sql);
+        case 8:
+          result = _context19.sent;
+          promisePoolEnd();
+          categorias = Object.values(JSON.parse(JSON.stringify(result[0])));
+          return _context19.abrupt("return", res.json({
             status: 200,
-            message: "Se ha obtenido los mov Anulados",
-            data: movimientos
+            message: "Se ha obtenido las items del movimiento de salida",
+            data: categorias
           }));
-        case 15:
-          _context19.prev = 15;
+        case 14:
+          _context19.prev = 14;
           _context19.t0 = _context19["catch"](0);
-          return _context19.abrupt("return", res.status(500).json({
+          console.log(_context19.t0);
+          return _context19.abrupt("return", res.json({
             status: 500,
-            message: "Se ha producido un ERROR al obtener los mov Anulados"
+            message: "Se ha producido un ERROR al obtener los items del movimiento de salida"
           }));
         case 18:
         case "end":
           return _context19.stop();
       }
-    }, _callee19, null, [[0, 15]]);
+    }, _callee19, null, [[0, 14]]);
   }));
-  return function getMovimientosAnuladosSalida(_x34, _x35) {
+  return function getItemsSalida(_x36, _x37) {
     return _ref19.apply(this, arguments);
   };
 }();
-exports.getMovimientosAnuladosSalida = getMovimientosAnuladosSalida;
+exports.getItemsSalida = getItemsSalida;

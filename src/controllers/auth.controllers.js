@@ -99,7 +99,7 @@ export const signIn = async (req, res) => {
     return res.status(500).json(
       {
         status: 500,
-        message: "Se ha producido un ERROR al crear el  usuario",
+        message: "Se ha producido un ERROR al  iniciar sesión ",
         error
       }
     );
