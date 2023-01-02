@@ -555,8 +555,14 @@ export const updateAnularEntrada = async (req, res) => {
   try {
     const { _id } = req.params;
 
-    const movimiento_select = await Movimiento.findById({ _id });
-
+    let sql2 = `CALL sp_obtener_entrada_por_id('${_id}')`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimiento_select = JSON.parse(JSON.stringify(result2[0][0]));
+    
     if (!movimiento_select) {
       return res.status(404).json({
         status: 404,
@@ -564,110 +570,98 @@ export const updateAnularEntrada = async (req, res) => {
       });
     }
 
+    let sql3 = `CALL sp_obtener_productos_movimiento_entrada('${movimiento_select.id}')`;
+    const pool3 = mysql.createPool(config_mysql)
+    const promiseQuery3 = promisify(pool3.query).bind(pool3)
+    const promisePoolEnd3 = promisify(pool3.end).bind(pool3)
+    const result3 = await promiseQuery3(sql3)
+    promisePoolEnd3()
+    const lista_items_mov = JSON.parse(JSON.stringify(result3[0]));
+
     const movementsArray = [];
 
     //===== record
-    if (movimiento_select.lista_items) {
+    var mov_var=movimiento_select;
+    if (lista_items_mov!=null) {
       // un ITEM (los objects del array lista_items) tiene los campos:
       //     codigo_product, name_product,description,categoria,
       //     stock, precio, cantidad
-      if (movimiento_select.tipo == "Entrada") {
-        for (let item of movimiento_select.lista_items) {
-          const item_code = item.codigo_product;
-          // Obteniendo Producto del item
-          const Producto_item = await Producto.findOne({
-            codigo: item_code,
+      for (let item of lista_items_mov) {
+        const item_id = item.id_producto;
+        // Obteniendo Producto del item
+        console.log(item_id);
+        let sql4 = `CALL sp_obtener_producto_por_id('${item_id}')`;
+        const pool4 = mysql.createPool(config_mysql)
+        const promiseQuery4 = promisify(pool4.query).bind(pool4)
+        const promisePoolEnd4 = promisify(pool4.end).bind(pool4)
+        const result4 = await promiseQuery4(sql4)
+        promisePoolEnd4()
+        const Producto_item = JSON.parse(JSON.stringify(result4[0][0]));
+        
+        console.log(Producto_item);
+
+        const item_code = Producto_item.codigo;
+
+        if (!Producto_item) {
+          return res.json({
+            status: 404,
+            message: "No se encontró el producto del item",
           });
-          if (!Producto_item) {
-            return res.json({
-              status: 404,
-              message: "No se encontró el producto del item",
-            });
-          }
-          // Validación de operacion aceptada con el stock
-          if (item.cantidad > Producto_item.stock) {
-            return res.status(400).json({
-              status: 400,
-              message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
-            });
-          }
-
-          console.log("old stock", Producto_item.stock);
-          const stock_new = Producto_item.stock - item.cantidad;
-          console.log("new stock", stock_new);
-          // Actualizar Colleccion Productos
-          const Producto_upd = await Producto.findOneAndUpdate(
-            { codigo: item.codigo_product },
-            {
-              stock: stock_new,
-            }
-          );
-          if (!Producto_upd) {
-            return res.status(404).json({
-              status: 404,
-              message: "No se encontró al producto que se quiere actualizar",
-            });
-          }
-
-          const updated_product = await Producto.findOne({ codigo: item.codigo_product });
-
-          movementsArray.push(updated_product);
         }
-      }
-      // Para los movimientos de Tipo Salida
-      else {
-        const lista_items = movimiento_select.lista_items;
-        await lista_items.forEach(async (item) => {
-          const item_code = item.codigo_product;
-          // Obteniendo el stock producto del item
-          const Producto_item = await Producto.findOne({
-            codigo: item_code,
+        // Validación de operacion aceptada con el stock
+        if (item.cantidad > Producto_item.stock) {
+          return res.status(400).json({
+            status: 400,
+            message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
           });
-          if (!Producto_item) {
-            return res.json({
-              status: 404,
-              message: "No se encontró el producto del item",
-            });
-          }
-          console.log("old stock", Producto_item.stock);
-          const stock_new = Producto_item.stock + item.cantidad;
-          console.log("new stock", stock_new);
-          // Actualizar Colleccion Productos
-          const Producto_upd = await Producto.findOneAndUpdate(
-            { codigo: item.codigo_product },
-            {
-              stock: stock_new,
-            }
-          );
-          if (!Producto_upd) {
-            return res.status(404).json({
-              status: 404,
-              message: "No se encontró al producto que se quiere actuañizar",
-            });
-          }
-          const updated_product = await Producto.findOne({
-            codigo: item.codigo_product,
-          });
+        }
 
-          movementsArray.push(updated_product);
-        });
+        console.log("old stock", Producto_item.stock);
+        const stock_new = Producto_item.stock - item.cantidad;
+        console.log("new stock", stock_new);
+        // Actualizar Colleccion Productos
+        let sql5 = `CALL sp_actualizar_stock_producto_por_codigo('${item_code}','${stock_new}')`;
+        const pool5 = mysql.createPool(config_mysql)
+        const promiseQuery5 = promisify(pool5.query).bind(pool5)
+        const promisePoolEnd5 = promisify(pool5.end).bind(pool5)
+        const result5 = await promiseQuery5(sql5)
+        promisePoolEnd5()
+        const Producto_upd = JSON.parse(JSON.stringify(result5[0][0]));
+        if (!Producto_upd) {
+          return res.status(404).json({
+            status: 404,
+            message: "No se encontró al producto que se quiere actualizar",
+          });
+        }
+
+        let sql6 = `CALL sp_obtener_producto_por_code('${item_code}')`;
+        const pool6 = mysql.createPool(config_mysql)
+        const promiseQuery6 = promisify(pool6.query).bind(pool6)
+        const promisePoolEnd6 = promisify(pool6.end).bind(pool6)
+        const result6 = await promiseQuery6(sql6)
+        promisePoolEnd6()
+        const updated_product = JSON.parse(JSON.stringify(result6[0][0]));
+
+        movementsArray.push(updated_product);
       }
     }
-    const updated_mov = await Movimiento.findOneAndUpdate(
-      { _id },
-      { estado: "Anulado" }
-    );
+    let sql7 = `CALL sp_anular_movimiento_entrada('${movimiento_select.id}')`;
+    const pool7 = mysql.createPool(config_mysql)
+    const promiseQuery7 = promisify(pool7.query).bind(pool7)
+    const promisePoolEnd7 = promisify(pool7.end).bind(pool7)
+    const result7 = await promiseQuery7(sql7)
+    promisePoolEnd7()
+    const updated_mov = JSON.parse(JSON.stringify(result7[0][0]));
     if (!updated_mov) {
       return res.status(404).json({
         status: 404,
         message: "No se encontró al movimiento para anularlo",
       });
     }
-    const updated_movimiento = await Movimiento.findOne({ _id });
     return res.status(200).json({
       status: 200,
       message: "Se ha anulado el movimiento",
-      data: updated_movimiento,
+      data: updated_mov,
       movimientos: movementsArray,
     });
   } catch (error) {
@@ -868,9 +862,13 @@ export const getMovimientoByCodeSalida = async (req, res) => {
 export const updateAnularSalida = async (req, res) => {
   try {
     const { _id } = req.params;
-
-    const movimiento_select = await Movimiento.findById({ _id });
-
+    let sql2 = `CALL sp_obtener_salida_por_id('${_id}')`;
+    const pool2 = mysql.createPool(config_mysql)
+    const promiseQuery2 = promisify(pool2.query).bind(pool2)
+    const promisePoolEnd2 = promisify(pool2.end).bind(pool2)
+    const result2 = await promiseQuery2(sql2)
+    promisePoolEnd2()
+    const movimiento_select = JSON.parse(JSON.stringify(result2[0][0]));
     if (!movimiento_select) {
       return res.status(404).json({
         status: 404,
@@ -878,110 +876,97 @@ export const updateAnularSalida = async (req, res) => {
       });
     }
 
+    let sql3 = `CALL sp_obtener_productos_movimiento_salida('${movimiento_select.id}')`;
+    const pool3 = mysql.createPool(config_mysql)
+    const promiseQuery3 = promisify(pool3.query).bind(pool3)
+    const promisePoolEnd3 = promisify(pool3.end).bind(pool3)
+    const result3 = await promiseQuery3(sql3)
+    promisePoolEnd3()
+    const lista_items_mov = JSON.parse(JSON.stringify(result3[0]));
+
     const movementsArray = [];
 
     //===== record
-    if (movimiento_select.lista_items) {
+    var mov_var=movimiento_select;
+    if (lista_items_mov!=null) {
       // un ITEM (los objects del array lista_items) tiene los campos:
       //     codigo_product, name_product,description,categoria,
       //     stock, precio, cantidad
-      if (movimiento_select.tipo == "Entrada") {
-        for (let item of movimiento_select.lista_items) {
-          const item_code = item.codigo_product;
-          // Obteniendo Producto del item
-          const Producto_item = await Producto.findOne({
-            codigo: item_code,
+      for (let item of lista_items_mov) {
+        const item_id = item.id_producto;
+        // Obteniendo Producto del item
+        let sql4 = `CALL sp_obtener_producto_por_id('${item_id}')`;
+        const pool4 = mysql.createPool(config_mysql)
+        const promiseQuery4 = promisify(pool4.query).bind(pool4)
+        const promisePoolEnd4 = promisify(pool4.end).bind(pool4)
+        const result4 = await promiseQuery4(sql4)
+        promisePoolEnd4()
+        const Producto_item = JSON.parse(JSON.stringify(result4[0][0]));
+        
+        console.log(Producto_item);
+
+        const item_code = Producto_item.codigo;
+
+        if (!Producto_item) {
+          return res.json({
+            status: 404,
+            message: "No se encontró el producto del item",
           });
-          if (!Producto_item) {
-            return res.json({
-              status: 404,
-              message: "No se encontró el producto del item",
-            });
-          }
-          // Validación de operacion aceptada con el stock
-          if (item.cantidad > Producto_item.stock) {
-            return res.status(400).json({
-              status: 400,
-              message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
-            });
-          }
-
-          console.log("old stock", Producto_item.stock);
-          const stock_new = Producto_item.stock - item.cantidad;
-          console.log("new stock", stock_new);
-          // Actualizar Colleccion Productos
-          const Producto_upd = await Producto.findOneAndUpdate(
-            { codigo: item.codigo_product },
-            {
-              stock: stock_new,
-            }
-          );
-          if (!Producto_upd) {
-            return res.status(404).json({
-              status: 404,
-              message: "No se encontró al producto que se quiere actualizar",
-            });
-          }
-
-          const updated_product = await Producto.findOne({ codigo: item.codigo_product });
-
-          movementsArray.push(updated_product);
         }
-      }
-      // Para los movimientos de Tipo Salida
-      else {
-        const lista_items = movimiento_select.lista_items;
-        await lista_items.forEach(async (item) => {
-          const item_code = item.codigo_product;
-          // Obteniendo el stock producto del item
-          const Producto_item = await Producto.findOne({
-            codigo: item_code,
+        // Validación de operacion aceptada con el stock
+        if (item.cantidad > Producto_item.stock) {
+          return res.status(400).json({
+            status: 400,
+            message: "NO SE PUEDE REALIZAR OPERACION, STOCK INSUFICIENTE",
           });
-          if (!Producto_item) {
-            return res.json({
-              status: 404,
-              message: "No se encontró el producto del item",
-            });
-          }
-          console.log("old stock", Producto_item.stock);
-          const stock_new = Producto_item.stock + item.cantidad;
-          console.log("new stock", stock_new);
-          // Actualizar Colleccion Productos
-          const Producto_upd = await Producto.findOneAndUpdate(
-            { codigo: item.codigo_product },
-            {
-              stock: stock_new,
-            }
-          );
-          if (!Producto_upd) {
-            return res.status(404).json({
-              status: 404,
-              message: "No se encontró al producto que se quiere actuañizar",
-            });
-          }
-          const updated_product = await Producto.findOne({
-            codigo: item.codigo_product,
-          });
+        }
 
-          movementsArray.push(updated_product);
-        });
+        console.log("old stock", Producto_item.stock);
+        const stock_new = Producto_item.stock + item.cantidad;
+        console.log("new stock", stock_new);
+        // Actualizar Colleccion Productos
+        let sql5 = `CALL sp_actualizar_stock_producto_por_codigo('${item_code}','${stock_new}')`;
+        const pool5 = mysql.createPool(config_mysql)
+        const promiseQuery5 = promisify(pool5.query).bind(pool5)
+        const promisePoolEnd5 = promisify(pool5.end).bind(pool5)
+        const result5 = await promiseQuery5(sql5)
+        promisePoolEnd5()
+        const Producto_upd = JSON.parse(JSON.stringify(result5[0][0]));
+        if (!Producto_upd) {
+          return res.status(404).json({
+            status: 404,
+            message: "No se encontró al producto que se quiere actualizar",
+          });
+        }
+
+        let sql6 = `CALL sp_obtener_producto_por_code('${item_code}')`;
+        const pool6 = mysql.createPool(config_mysql)
+        const promiseQuery6 = promisify(pool6.query).bind(pool6)
+        const promisePoolEnd6 = promisify(pool6.end).bind(pool6)
+        const result6 = await promiseQuery6(sql6)
+        promisePoolEnd6()
+        const updated_product = JSON.parse(JSON.stringify(result6[0][0]));
+
+        movementsArray.push(updated_product);
       }
     }
-    const updated_mov = await Movimiento.findOneAndUpdate(
-      { _id },
-      { estado: "Anulado" }
-    );
+    let sql7 = `CALL sp_anular_movimiento_salida('${movimiento_select.id}')`;
+    const pool7 = mysql.createPool(config_mysql)
+    const promiseQuery7 = promisify(pool7.query).bind(pool7)
+    const promisePoolEnd7 = promisify(pool7.end).bind(pool7)
+    const result7 = await promiseQuery7(sql7)
+    promisePoolEnd7()
+    const updated_mov = JSON.parse(JSON.stringify(result7[0][0]));
     if (!updated_mov) {
       return res.status(404).json({
         status: 404,
         message: "No se encontró al movimiento para anularlo",
       });
     }
-    const updated_movimiento = await Movimiento.findOne({ _id });
     return res.status(200).json({
       status: 200,
       message: "Se ha anulado el movimiento",
-      data: updated_movimiento,
+      data: updated_mov,
       movimientos: movementsArray,
     });
   } catch (error) {
