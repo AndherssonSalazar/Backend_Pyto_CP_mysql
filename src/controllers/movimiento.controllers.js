@@ -524,8 +524,6 @@ export const createMovimientoEntrada = async (req, res) => {
 export const getMovimientoByCodeEntrada = async (req, res) => {
   try {
     const { codigo } = req.params;
-    console.log(req.params);
-    console.log(codigo);
     let sql2 = `CALL sp_obtener_entrada_por_code('${codigo}')`;
     const pool2 = mysql.createPool(config_mysql)
     const promiseQuery2 = promisify(pool2.query).bind(pool2)

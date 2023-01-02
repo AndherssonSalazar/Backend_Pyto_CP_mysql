@@ -51,6 +51,7 @@ export const signUp = async (req, res) => {
 }
 
 export const signIn = async (req, res) => {
+  try{
     //const userFound= await User.findOne({email: req.body.email}).populate("roles");   
     const {
       email,
@@ -92,5 +93,15 @@ export const signIn = async (req, res) => {
     
     
     })
-    
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json(
+      {
+        status: 500,
+        message: "Se ha producido un ERROR al crear el  usuario",
+        error
+      }
+    );
+  } 
 }
